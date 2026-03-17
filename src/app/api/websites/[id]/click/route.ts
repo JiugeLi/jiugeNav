@@ -13,21 +13,23 @@ export async function POST(
     const { id } = await params;
     const { env } = getCloudflareContext();
     const db = createDb(env.DB);
-    
+
     // 获取当前用户 ID
     const userId = getCurrentUserId(req);
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-    
+
     if (!id) {
       return new NextResponse('Website ID is required', { status: 400 });
     }
 
+    const currentTime = Math.floor(Date.now() / 1000); // Unix timestamp in seconds
+
     const result = await db.update(websites)
         .set({
             click_count: sql`${websites.click_count} + 1`,
-            last_clicked_at: Math.floor(Date.now() / 1000), // Unix timestamp in seconds
+            last_clicked_at: currentTime as any,
         })
         .where(and(
           eq(websites.id, parseInt(id)),

@@ -2,7 +2,7 @@ import { getCloudflareContext } from '@opennextjs/cloudflare';
 import { createDb } from '@/db';
 import { websites } from '@/db/schema';
 import { NextResponse } from 'next/server';
-import { eq, count, gte, sql } from 'drizzle-orm';
+import { eq, count, and, gte, sql } from 'drizzle-orm';
 import { getCurrentUserId } from '@/lib/get-current-user';
 
 export async function GET(req: Request) {
@@ -30,29 +30,28 @@ export async function GET(req: Request) {
       .where(eq(websites.user_id, userId));
     const totalLinks = totalLinksResult[0]?.count || 0;
 
-    // Get total click count
-    const totalClicksResult = await db.select({ total: sql<number>`COALESCE(SUM(${websites.click_count}), 0)` })
-      .from(websites)
-      .where(eq(websites.user_id, userId));
-    const totalClicks = totalClicksResult[0]?.total || 0;
+    // Get total click count by summing all click_count values
+    const websitesData = await db.select({ click_count: websites.click_count }).from(websites).where(eq(websites.user_id, userId));
+    const totalClicks = websitesData.reduce((sum, w) => sum + (w.click_count || 0), 0);
 
     // Get clicks from this week - sum click_count for websites clicked in last 7 days
-    const weeklyClicksResult = await db.select({ 
-      total: sql<number>`COALESCE(SUM(${websites.click_count}), 0)` 
+    // Use sql for timestamp comparison since fields are stored as integers
+    const weeklyWebsites = await db.select({
+      click_count: websites.click_count
     })
       .from(websites)
       .where(
         sql`${websites.user_id} = ${userId} AND ${websites.last_clicked_at} >= ${sevenDaysAgoTimestamp}`
       );
-    const weeklyClicks = weeklyClicksResult[0]?.total || 0;
+    const weeklyClicks = weeklyWebsites.reduce((sum, w) => sum + (w.click_count || 0), 0);
 
     // Get new links added this week
-    const newLinksResult = await db.select({ count: count() })
+    const newLinksThisWeekResult = await db.select({ id: websites.id })
       .from(websites)
       .where(
         sql`${websites.user_id} = ${userId} AND ${websites.created_at} >= ${sevenDaysAgoTimestamp}`
       );
-    const newLinksThisWeek = newLinksResult[0]?.count || 0;
+    const newLinksThisWeek = newLinksThisWeekResult.length || 0;
 
     return NextResponse.json({
       totalLinks,
