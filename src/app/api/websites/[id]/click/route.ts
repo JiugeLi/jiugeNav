@@ -5,11 +5,29 @@ import { NextResponse } from 'next/server';
 import { eq, sql, and } from 'drizzle-orm';
 import { getCurrentUserId } from '@/lib/get-current-user';
 
+// 本地开发模式标志
+let isLocalDev = false;
+
+// 检查是否在本地开发环境
+try {
+  const { env } = getCloudflareContext();
+  if (!env?.DB) {
+    isLocalDev = true;
+  }
+} catch (e) {
+  isLocalDev = true;
+}
+
 export async function POST(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // 本地开发模式 - 返回成功但不实际操作数据库
+    if (isLocalDev) {
+      return NextResponse.json({ message: 'Local dev mode - no database operation' });
+    }
+
     const { id } = await params;
     const { env } = getCloudflareContext();
     const db = createDb(env.DB);

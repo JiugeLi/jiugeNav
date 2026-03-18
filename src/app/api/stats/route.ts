@@ -5,8 +5,31 @@ import { NextResponse } from 'next/server';
 import { eq, count, and, gte, sql } from 'drizzle-orm';
 import { getCurrentUserId } from '@/lib/get-current-user';
 
+// 本地开发模式标志
+let isLocalDev = false;
+
+// 检查是否在本地开发环境
+try {
+  const { env } = getCloudflareContext();
+  if (!env?.DB) {
+    isLocalDev = true;
+  }
+} catch (e) {
+  isLocalDev = true;
+}
+
 export async function GET(req: Request) {
   try {
+    // 本地开发模式 - 返回默认数据
+    if (isLocalDev) {
+      return NextResponse.json({
+        totalLinks: 0,
+        totalClicks: 0,
+        weeklyClicks: 0,
+        newLinksThisWeek: 0,
+      });
+    }
+
     const { env } = getCloudflareContext();
     if (!env?.DB) {
       return new NextResponse('Database not available', { status: 503 });
@@ -61,6 +84,15 @@ export async function GET(req: Request) {
     });
   } catch (error) {
     console.error('[STATS_GET]', error);
+    // 如果在本地开发模式，返回默认数据而不是错误
+    if (isLocalDev) {
+      return NextResponse.json({
+        totalLinks: 0,
+        totalClicks: 0,
+        weeklyClicks: 0,
+        newLinksThisWeek: 0,
+      });
+    }
     return new NextResponse('Internal Error', { status: 500 });
   }
 }
