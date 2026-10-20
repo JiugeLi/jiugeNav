@@ -92,8 +92,8 @@ async function submitPassword() {
     <div class="p-6 space-y-5">
       <div class="text-center space-y-1 pb-1">
         <div
-          class="w-14 h-14 mx-auto rounded-2xl flex items-center justify-center text-white animate-ac-float"
-          style="background-image: linear-gradient(140deg, #4f7cff, #5f6fff 55%, #7c5cf5); box-shadow: 0 4px 0 #2b3fa8"
+          class="w-14 h-14 mx-auto rounded-2xl flex items-center justify-center text-white"
+          style="background-image: linear-gradient(140deg, #4F7CFF, #5F6FFF 55%, #7C5CF5); box-shadow: 0 6px 14px -8px rgba(53, 96, 224, 0.7)"
         >
           <Link2 :size="26" />
         </div>
@@ -125,7 +125,7 @@ async function submitPassword() {
           >
         </div>
 
-        <div v-if="error" class="p-3 rounded-2xl bg-[#2a141c] border-2 border-[#5c2b3c] text-[#ff7d93] text-sm font-semibold text-center">
+        <div v-if="error" class="p-3 rounded-2xl bg-[#fef3f2] border-2 border-[#fecdc9] text-[#d92d20] text-sm font-semibold text-center">
           {{ error }}
         </div>
 

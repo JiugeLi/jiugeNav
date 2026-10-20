@@ -3,28 +3,24 @@
 @tailwind utilities;
 
 /* ============================================================
-   SoloLink · 深色冷调二次元主题（深空 / 宝蓝 / 霓虹青）
+   SoloLink · 浅色冷调主题（蓝灰 / 靛蓝）
    ------------------------------------------------------------
-   · 所有视觉聚合在这里：配色变量、背景、卡片、按钮、输入框、
-     星尘与光晕装饰。页面里只写语义化 class。
-   · 深色底下色阶方向反转：50/100/200 = 深色表面与描边，
-     400/500 = 主强调，600/700 = 高亮文字。详见 tailwind.config.ts。
+   · 所有视觉聚合在这里：配色变量、背景、卡片、按钮、输入框。
+   · 刻意保持「静态」：只有 hover 的颜色/边框过渡，没有位移、
+     缩放、漂浮、闪烁等装饰动画。
    ============================================================ */
 
 @layer base {
   :root {
-    --ac-ink: #e7ecff;
-    --ac-ink-soft: #a3aede;
-    --ac-ink-mute: #707da8;
-    --ac-azure: #4f7cff;
-    --ac-azure-deep: #3457d8;
-    --ac-azure-soft: #1d2551;
+    --ac-ink: #101828;
+    --ac-ink-soft: #475467;
+    --ac-ink-mute: #8a94ab;
+    --ac-accent: #4f7cff;
+    --ac-accent-deep: #3560e0;
+    --ac-accent-soft: #eff4ff;
     --ac-violet: #7c5cf5;
-    --ac-cyan: #45d6ec;
-    --ac-mint: #2ec4a8;
-    --ac-sun: #ffc963;
-    --ac-danger: #ff7d93;
-    --ac-line: #26305e;
+    --ac-cyan: #1a9cbb;
+    --ac-line: #e4eaf6;
   }
 
   html,
@@ -37,48 +33,43 @@
     @apply antialiased;
     color: var(--ac-ink);
     font-family: 'PingFang SC', 'HarmonyOS Sans SC', 'Microsoft YaHei UI', 'Microsoft YaHei', ui-rounded, 'Segoe UI', system-ui, sans-serif;
-    background-color: #080b1c;
-    background-image:
-      radial-gradient(1000px 560px at 6% -10%, rgba(79, 124, 255, 0.24) 0%, rgba(79, 124, 255, 0) 62%),
-      radial-gradient(880px 520px at 100% -4%, rgba(124, 92, 245, 0.22) 0%, rgba(124, 92, 245, 0) 58%),
-      radial-gradient(1100px 700px at 52% 110%, rgba(69, 214, 236, 0.14) 0%, rgba(69, 214, 236, 0) 62%),
-      linear-gradient(168deg, #0a0f24 0%, #0b1128 52%, #070a19 100%);
+    background-color: #f5f7fc;
+    background-image: linear-gradient(180deg, #f7f9fe 0%, #f2f5fc 100%);
     background-attachment: fixed;
   }
 
   ::selection {
-    background: rgba(79, 124, 255, 0.42);
-    color: #eef2ff;
+    background: #dfe9ff;
+    color: #2848b8;
   }
 }
 
 @layer components {
   /* ---------- 容器 ---------- */
   .ac-panel {
-    background: rgba(15, 20, 45, 0.76);
-    backdrop-filter: blur(20px) saturate(140%);
-    -webkit-backdrop-filter: blur(20px) saturate(140%);
+    background: rgba(255, 255, 255, 0.86);
+    backdrop-filter: blur(16px) saturate(140%);
+    -webkit-backdrop-filter: blur(16px) saturate(140%);
   }
 
   .ac-card {
     position: relative;
-    border-radius: 20px;
-    background: linear-gradient(180deg, rgba(27, 34, 73, 0.92) 0%, rgba(21, 27, 61, 0.94) 100%);
+    border-radius: 16px;
+    background: #ffffff;
     border: 1px solid var(--ac-line);
-    box-shadow: 0 6px 0 -4px rgba(6, 9, 22, 0.95), 0 22px 38px -28px rgba(0, 0, 0, 0.95);
-    transition: transform 0.28s cubic-bezier(0.34, 1.4, 0.64, 1), box-shadow 0.28s ease, border-color 0.28s ease;
+    box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04), 0 12px 28px -22px rgba(16, 24, 40, 0.18);
+    transition: border-color 0.16s ease, box-shadow 0.16s ease;
   }
 
   .ac-card-hover:hover {
-    transform: translateY(-4px);
-    border-color: var(--ac-azure);
-    box-shadow: 0 8px 0 -4px rgba(6, 9, 22, 0.95), 0 26px 44px -26px rgba(79, 124, 255, 0.62);
+    border-color: #b9cdff;
+    box-shadow: 0 1px 2px rgba(16, 24, 40, 0.05), 0 16px 32px -22px rgba(53, 96, 224, 0.28);
   }
 
   .ac-glass {
-    background: rgba(11, 16, 38, 0.78);
-    backdrop-filter: blur(18px) saturate(150%);
-    -webkit-backdrop-filter: blur(18px) saturate(150%);
+    background: rgba(255, 255, 255, 0.84);
+    backdrop-filter: blur(14px) saturate(140%);
+    -webkit-backdrop-filter: blur(14px) saturate(140%);
   }
 
   /* ---------- 按钮 ---------- */
@@ -86,127 +77,114 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 0.45rem;
-    border-radius: 12px;
+    gap: 0.4rem;
+    border-radius: 10px;
     font-weight: 700;
     border: 1px solid transparent;
-    transition: transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.18s ease, filter 0.18s ease, background-color 0.18s ease, color 0.18s ease, border-color 0.18s ease;
+    transition: background-color 0.16s ease, border-color 0.16s ease, color 0.16s ease, box-shadow 0.16s ease;
     cursor: pointer;
     white-space: nowrap;
   }
 
-  .ac-btn:active {
-    transform: translateY(2px) scale(0.99);
-  }
-
   .ac-btn:disabled {
-    opacity: 0.45;
+    opacity: 0.55;
     cursor: not-allowed;
-    transform: none;
-    filter: saturate(0.5);
   }
 
   .ac-btn-primary {
     color: #fff;
-    background-image: linear-gradient(135deg, #4f7cff 0%, #5f6fff 45%, #7c5cf5 100%);
-    box-shadow: 0 4px 0 #2b3fa8, 0 16px 28px -16px rgba(79, 124, 255, 0.9);
+    background-image: linear-gradient(135deg, #4f7cff 0%, #5f6fff 55%, #7c5cf5 100%);
+    box-shadow: 0 1px 2px rgba(16, 24, 40, 0.06), 0 8px 18px -12px rgba(53, 96, 224, 0.6);
   }
 
   .ac-btn-primary:hover:not(:disabled) {
-    transform: translateY(-1px);
-    filter: brightness(1.08);
-    box-shadow: 0 6px 0 #2b3fa8, 0 20px 32px -16px rgba(79, 124, 255, 0.95);
+    background-image: linear-gradient(135deg, #4470f5 0%, #5563f5 55%, #6f4ee8 100%);
+    box-shadow: 0 1px 2px rgba(16, 24, 40, 0.08), 0 10px 20px -12px rgba(53, 96, 224, 0.7);
   }
 
-  /* 主按钮禁用时退回深色描边态，避免半透明渐变发灰 */
   .ac-btn-primary:disabled {
     opacity: 1;
-    color: #7c88bb;
+    color: #9aa6c2;
     background-image: none;
-    background-color: #1b2249;
-    border-color: #2a3470;
-    box-shadow: 0 3px 0 #10142e;
+    background-color: #eef2fb;
+    border-color: #e4eaf6;
+    box-shadow: none;
   }
 
   .ac-btn-mint {
-    color: #06231f;
-    background-image: linear-gradient(135deg, #46ddc1 0%, #2ec4a8 50%, #2fb8d8 100%);
-    box-shadow: 0 4px 0 #146b60, 0 16px 28px -16px rgba(46, 196, 168, 0.8);
+    color: #fff;
+    background-image: linear-gradient(135deg, #2ec4a8 0%, #1aa8b5 100%);
+    box-shadow: 0 1px 2px rgba(16, 24, 40, 0.06), 0 8px 18px -12px rgba(23, 162, 137, 0.55);
   }
 
   .ac-btn-mint:hover:not(:disabled) {
-    transform: translateY(-1px);
-    filter: brightness(1.06);
-    box-shadow: 0 6px 0 #146b60, 0 20px 32px -16px rgba(46, 196, 168, 0.85);
+    background-image: linear-gradient(135deg, #29b79d 0%, #179ba7 100%);
   }
 
   .ac-btn-lumi {
     color: #fff;
-    background-image: linear-gradient(135deg, #7c5cf5 0%, #6a63ff 50%, #4f7cff 100%);
-    box-shadow: 0 4px 0 #3f2f9e, 0 16px 28px -16px rgba(124, 92, 245, 0.8);
+    background-image: linear-gradient(135deg, #7c5cf5 0%, #6a63f5 100%);
+    box-shadow: 0 1px 2px rgba(16, 24, 40, 0.06), 0 8px 18px -12px rgba(100, 68, 214, 0.55);
   }
 
   .ac-btn-lumi:hover:not(:disabled) {
-    transform: translateY(-1px);
-    filter: brightness(1.08);
-    box-shadow: 0 6px 0 #3f2f9e, 0 20px 32px -16px rgba(124, 92, 245, 0.85);
+    background-image: linear-gradient(135deg, #6f4ee8 0%, #5d56e8 100%);
   }
 
   .ac-btn-ghost {
     color: var(--ac-ink);
-    background: rgba(25, 32, 68, 0.92);
-    border-color: #2b3566;
-    box-shadow: 0 3px 0 #0d1229;
+    background: #ffffff;
+    border-color: var(--ac-line);
+    box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04);
   }
 
   .ac-btn-ghost:hover:not(:disabled) {
-    transform: translateY(-1px);
-    border-color: var(--ac-azure);
-    color: #b6ccff;
-    background: rgba(32, 41, 84, 0.96);
-    box-shadow: 0 5px 0 #0d1229;
+    border-color: #b9cdff;
+    color: var(--ac-accent-deep);
+    background: #f7f9fe;
   }
 
   .ac-btn-danger {
-    color: var(--ac-danger);
-    background: rgba(58, 20, 30, 0.85);
-    border-color: #5c2b3c;
-    box-shadow: 0 3px 0 #1b0f16;
+    color: #d92d20;
+    background: #ffffff;
+    border-color: #fecdc9;
   }
 
   .ac-btn-danger:hover:not(:disabled) {
-    background: rgba(74, 25, 38, 0.95);
-    border-color: #8f3a50;
-    transform: translateY(-1px);
+    background: #fef3f2;
+    border-color: #fda29b;
   }
 
   .ac-btn-danger-solid {
     color: #fff;
-    background-image: linear-gradient(135deg, #ff7d93 0%, #e0405f 100%);
-    box-shadow: 0 4px 0 #8f1f33, 0 16px 28px -16px rgba(224, 64, 95, 0.8);
+    background-image: linear-gradient(135deg, #f04438 0%, #d92d20 100%);
+    box-shadow: 0 1px 2px rgba(16, 24, 40, 0.06), 0 8px 18px -12px rgba(217, 45, 32, 0.55);
+  }
+
+  .ac-btn-danger-solid:hover:not(:disabled) {
+    background-image: linear-gradient(135deg, #e13b2f 0%, #c42519 100%);
   }
 
   /* ---------- 表单 ---------- */
   .ac-input {
     width: 100%;
-    border-radius: 12px;
-    border: 1px solid #2b3566;
-    background: rgba(11, 16, 38, 0.92);
+    border-radius: 10px;
+    border: 1px solid #dbe3f2;
+    background: #ffffff;
     padding: 0.7rem 1rem;
     font-size: 0.875rem;
     color: var(--ac-ink);
-    transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+    transition: border-color 0.16s ease, box-shadow 0.16s ease;
   }
 
   .ac-input::placeholder {
-    color: #5b678f;
+    color: #a3adc2;
   }
 
   .ac-input:focus {
     outline: none;
-    border-color: var(--ac-azure);
-    box-shadow: 0 0 0 3px rgba(79, 124, 255, 0.24);
-    background: rgba(15, 21, 46, 0.98);
+    border-color: #9dbcff;
+    box-shadow: 0 0 0 3px rgba(79, 124, 255, 0.14);
   }
 
   .ac-label {
@@ -215,27 +193,27 @@
     gap: 0.4rem;
     font-size: 0.72rem;
     font-weight: 800;
-    letter-spacing: 0.14em;
+    letter-spacing: 0.12em;
     color: var(--ac-ink-soft);
     text-transform: uppercase;
     margin-bottom: 0.5rem;
   }
 
   .ac-label :where(svg) {
-    color: var(--ac-azure);
+    color: var(--ac-accent);
   }
 
   /* ---------- 文字与徽章 ---------- */
   .ac-section-title {
     font-size: 0.7rem;
     font-weight: 800;
-    letter-spacing: 0.24em;
+    letter-spacing: 0.2em;
     text-transform: uppercase;
     color: var(--ac-ink-mute);
   }
 
   .ac-gradient-text {
-    background-image: linear-gradient(120deg, #6f96ff 0%, #9a7dff 52%, #45d6ec 100%);
+    background-image: linear-gradient(120deg, #3560e0 0%, #6444d6 52%, #147d97 100%);
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
@@ -245,118 +223,25 @@
     display: inline-flex;
     align-items: center;
     gap: 0.25rem;
-    border-radius: 8px;
+    border-radius: 7px;
     padding: 0.1rem 0.5rem;
     font-size: 0.7rem;
     font-weight: 800;
-    background: rgba(79, 124, 255, 0.16);
-    color: #a9c0ff;
-    border: 1px solid rgba(79, 124, 255, 0.34);
+    background: var(--ac-accent-soft);
+    color: #3560e0;
+    border: 1px solid #dfe9ff;
   }
 
   .ac-divider {
     height: 1px;
-    background-image: linear-gradient(90deg, rgba(79, 124, 255, 0), rgba(79, 124, 255, 0.45), rgba(79, 124, 255, 0));
-  }
-
-  /* ---------- 装饰：星尘碎片 / 光晕 ---------- */
-  .ac-deco {
-    position: fixed;
-    inset: 0;
-    pointer-events: none;
-    overflow: hidden;
-    z-index: 0;
-  }
-
-  .ac-blob {
-    position: absolute;
-    border-radius: 9999px;
-    filter: blur(72px);
-    opacity: 0.4;
-    animation: ac-blob-float 18s ease-in-out infinite;
-  }
-
-  /* 斜向流光的碎片，替代原飘落花瓣 */
-  .ac-petal {
-    position: absolute;
-    top: -8vh;
-    width: 4px;
-    height: 14px;
-    border-radius: 2px;
-    background-image: linear-gradient(180deg, rgba(143, 176, 255, 0.9), rgba(69, 214, 236, 0.15));
-    box-shadow: 0 0 10px rgba(111, 150, 255, 0.75);
-    opacity: 0.5;
-    animation-name: ac-fall;
-    animation-timing-function: linear;
-    animation-iteration-count: infinite;
-    will-change: transform;
-  }
-
-  .ac-star {
-    position: absolute;
-    color: #8fb0ff;
-    font-size: 11px;
-    line-height: 1;
-    animation: ac-twinkle-soft 4s ease-in-out infinite;
-    text-shadow: 0 0 12px rgba(111, 150, 255, 0.95);
-  }
-
-  /* 网格底纹，比点阵更「工程感」 */
-  .ac-dots {
-    position: absolute;
-    inset: 0;
-    background-image:
-      linear-gradient(rgba(111, 150, 255, 0.09) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(111, 150, 255, 0.09) 1px, transparent 1px);
-    background-size: 34px 34px;
-    mask-image: radial-gradient(ellipse at 50% 0%, rgba(0, 0, 0, 0.6), transparent 74%);
-    -webkit-mask-image: radial-gradient(ellipse at 50% 0%, rgba(0, 0, 0, 0.6), transparent 74%);
-  }
-}
-
-@keyframes ac-fall {
-  0% {
-    transform: translate3d(0, -10vh, 0) rotate(0deg);
-    opacity: 0;
-  }
-  12% {
-    opacity: 0.6;
-  }
-  50% {
-    transform: translate3d(2.6vw, 48vh, 0) rotate(150deg);
-  }
-  100% {
-    transform: translate3d(-1.8vw, 112vh, 0) rotate(320deg);
-    opacity: 0;
-  }
-}
-
-@keyframes ac-blob-float {
-  0%,
-  100% {
-    transform: translate3d(0, 0, 0) scale(1);
-  }
-  50% {
-    transform: translate3d(2%, -3%, 0) scale(1.08);
-  }
-}
-
-@keyframes ac-twinkle-soft {
-  0%,
-  100% {
-    opacity: 0.18;
-    transform: scale(0.8) rotate(0deg);
-  }
-  50% {
-    opacity: 0.9;
-    transform: scale(1.15) rotate(18deg);
+    background-color: var(--ac-line);
   }
 }
 
 /* ---------- 滚动条 ---------- */
 .custom-scrollbar {
   scrollbar-width: thin;
-  scrollbar-color: #2f3c7a transparent;
+  scrollbar-color: #d3dcee transparent;
 }
 
 .custom-scrollbar::-webkit-scrollbar {
@@ -369,30 +254,19 @@
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background-image: linear-gradient(180deg, #33509f, #4a3f9e);
+  background-color: #d3dcee;
   border-radius: 9999px;
   border: 2px solid transparent;
   background-clip: padding-box;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background-image: linear-gradient(180deg, #4f7cff, #7c5cf5);
+  background-color: #bcc8e0;
 }
 
 /* 兼容旧的 .glass 用法 */
 .glass {
-  background: rgba(11, 16, 38, 0.8);
-  backdrop-filter: blur(18px) saturate(150%);
-  -webkit-backdrop-filter: blur(18px) saturate(150%);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .ac-petal,
-  .ac-blob,
-  .ac-star,
-  .ac-card,
-  .ac-btn {
-    animation: none !important;
-    transition: none !important;
-  }
+  background: rgba(255, 255, 255, 0.86);
+  backdrop-filter: blur(14px) saturate(140%);
+  -webkit-backdrop-filter: blur(14px) saturate(140%);
 }

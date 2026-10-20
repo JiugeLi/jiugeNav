@@ -11,11 +11,11 @@ const emit = defineEmits<{ close: [] }>();
 
 <template>
   <div v-if="open" class="fixed inset-0 z-50 flex items-center justify-center p-4">
-    <div class="absolute inset-0 bg-[#03050e]/70 backdrop-blur-md" @click="emit('close')" />
+    <div class="absolute inset-0 bg-[#0b1220]/40 backdrop-blur-md" @click="emit('close')" />
 
     <div
-      class="relative w-full flex flex-col max-h-[90vh] overflow-hidden animate-ac-pop rounded-[28px] bg-surface border-2 border-sakura-200"
-      style="box-shadow: 0 8px 0 -2px #0b1020, 0 34px 70px -30px rgba(0, 0, 0, 0.85)"
+      class="relative w-full flex flex-col max-h-[90vh] overflow-hidden rounded-2xl bg-surface border-2 border-sakura-200"
+      style="box-shadow: 0 24px 56px -26px rgba(16, 24, 40, 0.34), 0 2px 6px rgba(16, 24, 40, 0.06)"
       :class="width"
     >
       <!-- 顶部彩条 -->
@@ -30,7 +30,7 @@ const emit = defineEmits<{ close: [] }>();
         </h2>
         <button
           aria-label="关闭"
-          class="p-2 rounded-full text-ink-soft bg-surface-2 border border-sakura-100 hover:text-sakura-600 hover:border-sakura-400 hover:rotate-90 transition-all duration-200"
+          class="p-2 rounded-full text-ink-soft bg-surface-2 border border-sakura-100 hover:text-sakura-600 hover:border-sakura-400 transition-colors duration-150"
           @click="emit('close')"
         >
           <X :size="18" />

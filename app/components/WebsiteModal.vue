@@ -95,7 +95,7 @@ function submit() {
         </select>
       </div>
 
-      <div class="rounded-3xl border-2 border-sakura-100 bg-sakura-50/50 p-4 space-y-4">
+      <div class="rounded-2xl border border-sakura-100 bg-sakura-50/50 p-4 space-y-4">
         <div>
           <label class="ac-label"><Globe :size="14" />名称</label>
           <input v-model="form.name" type="text" class="ac-input" placeholder="网站名称" required>

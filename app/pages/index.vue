@@ -11,7 +11,6 @@ import ChangePasswordModal from '~/components/ChangePasswordModal.vue';
 import LinkCheckerModal from '~/components/LinkCheckerModal.vue';
 import StatCards from '~/components/StatCards.vue';
 import WebsiteLogo from '~/components/WebsiteLogo.vue';
-import AnimeBackdrop from '~/components/AnimeBackdrop.vue';
 import type { Group, Website } from '~/utils/types';
 
 const store = useStore();
@@ -101,28 +100,26 @@ const activeGroupName = computed(() => groups.value.find((g) => g.id === activeG
 
 <template>
   <div class="h-screen flex overflow-hidden relative text-ink font-rounded">
-    <AnimeBackdrop />
-
     <div v-if="loading" class="flex items-center justify-center h-screen w-full relative z-10">
       <div class="flex flex-col items-center gap-4">
         <div class="w-12 h-12 rounded-full border-4 border-sakura-100 border-t-sakura-400 animate-spin" />
-        <p class="text-sm font-bold text-ink-soft animate-ac-float">加载中 ✧</p>
+        <p class="text-sm font-bold text-ink-soft">加载中 ✧</p>
       </div>
     </div>
 
     <template v-else>
-      <div v-if="sidebarOpen" class="fixed inset-0 bg-[#03050e]/70 backdrop-blur-sm z-30 lg:hidden" @click="sidebarOpen = false" />
+      <div v-if="sidebarOpen" class="fixed inset-0 bg-[#0b1220]/40 backdrop-blur-sm z-30 lg:hidden" @click="sidebarOpen = false" />
 
       <!-- 侧边栏 -->
       <aside
-        class="fixed lg:static inset-y-0 left-0 z-40 w-72 shrink-0 ac-glass border-r-2 border-white/10 transform transition-transform duration-300 ease-out lg:transform-none flex flex-col h-full overflow-hidden"
+        class="fixed lg:static inset-y-0 left-0 z-40 w-72 shrink-0 ac-glass border-r-2 border-[#e4eaf6] transform transition-transform duration-300 ease-out lg:transform-none flex flex-col h-full overflow-hidden"
         :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'"
-        style="box-shadow: 10px 0 40px -32px rgba(0, 0, 0, 0.9)"
+        style="box-shadow: 10px 0 40px -32px rgba(16, 24, 40, 0.12)"
       >
         <div class="px-5 pt-5 pb-4 flex items-center justify-between">
           <div class="flex items-center gap-3">
             <div class="relative w-11 h-11 rounded-2xl flex items-center justify-center text-white text-lg font-black shrink-0"
-                 style="background-image: linear-gradient(140deg, #4f7cff, #5f6fff 55%, #7c5cf5); box-shadow: 0 4px 0 #2b3fa8">
+                 style="background-image: linear-gradient(140deg, #4F7CFF, #5F6FFF 55%, #7C5CF5); box-shadow: 0 6px 14px -8px rgba(53, 96, 224, 0.7)">
               <Link2 :size="20" />
             </div>
             <div class="leading-tight">
@@ -130,7 +127,7 @@ const activeGroupName = computed(() => groups.value.find((g) => g.id === activeG
               <p class="text-[10px] font-bold tracking-[0.2em] text-ink-mute">PERSONAL LINK DECK</p>
             </div>
           </div>
-          <button class="lg:hidden p-2 rounded-full text-ink-soft hover:bg-white/5" @click="sidebarOpen = false">
+          <button class="lg:hidden p-2 rounded-full text-ink-soft hover:bg-[#eff3fb]" @click="sidebarOpen = false">
             <X :size="18" />
           </button>
         </div>
@@ -143,7 +140,7 @@ const activeGroupName = computed(() => groups.value.find((g) => g.id === activeG
           <h2 class="ac-section-title">✦ 分组</h2>
           <button
             v-if="session"
-            class="w-7 h-7 rounded-full flex items-center justify-center text-sakura-600 bg-sakura-100 border border-sakura-200 hover:bg-sakura-200 hover:scale-110 transition-all"
+            class="w-7 h-7 rounded-full flex items-center justify-center text-sakura-600 bg-sakura-100 border border-sakura-200 hover:bg-sakura-200 transition-all"
             title="新建分组"
             @click="openGroupModal(null)"
           >
@@ -158,28 +155,28 @@ const activeGroupName = computed(() => groups.value.find((g) => g.id === activeG
             class="group relative flex items-center justify-between gap-2 px-3.5 py-2.5 rounded-2xl cursor-pointer transition-all duration-200 border-2"
             :class="activeGroupId === group.id
               ? 'text-white border-transparent'
-              : 'text-ink-soft border-transparent hover:bg-white/5 hover:text-ink hover:border-sakura-100'"
+              : 'text-ink-soft border-transparent hover:bg-[#eff3fb] hover:text-ink hover:border-sakura-100'"
             :style="activeGroupId === group.id
-              ? { backgroundImage: 'linear-gradient(135deg, #4f7cff, #5f6fff 48%, #7c5cf5)', boxShadow: '0 4px 0 -1px #2b3fa8, 0 14px 22px -18px rgba(79,124,255,.9)' }
+              ? { backgroundImage: 'linear-gradient(135deg, #4F7CFF, #5F6FFF 48%, #7C5CF5)', boxShadow: '0 8px 18px -12px rgba(53, 96, 224, 0.7)' }
               : undefined"
             @click="selectGroup(group.id)"
           >
             <div class="flex items-center gap-2.5 truncate flex-1 min-w-0">
-              <span class="text-lg transition-transform duration-200 group-hover:scale-125 group-hover:rotate-6">{{ group.icon || '📁' }}</span>
+              <span class="text-lg ">{{ group.icon || '📁' }}</span>
               <span class="font-bold text-sm truncate">{{ group.name }}</span>
             </div>
 
             <div class="flex items-center gap-1 shrink-0">
               <span
                 class="text-[11px] font-extrabold px-2 py-0.5 rounded-full"
-                :class="activeGroupId === group.id ? 'bg-black/25 text-white' : 'bg-sakura-50 text-sakura-600 border border-sakura-100'"
+                :class="activeGroupId === group.id ? 'bg-white/25 text-white' : 'bg-sakura-50 text-sakura-600 border border-sakura-100'"
               >
                 {{ groupCount(group.id) }}
               </span>
 
               <div v-if="session" class="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
                 <button
-                  class="p-1 rounded-full hover:bg-white/5 transition-colors"
+                  class="p-1 rounded-full hover:bg-[#eff3fb] transition-colors"
                   :class="activeGroupId === group.id ? 'text-white' : 'text-ink-soft hover:text-sakura-600'"
                   title="编辑分组"
                   @click.stop="openGroupModal(group)"
@@ -187,7 +184,7 @@ const activeGroupName = computed(() => groups.value.find((g) => g.id === activeG
                   <Edit2 :size="13" />
                 </button>
                 <button
-                  class="p-1 rounded-full hover:bg-white/5 transition-colors"
+                  class="p-1 rounded-full hover:bg-[#eff3fb] transition-colors"
                   :class="activeGroupId === group.id ? 'text-white' : 'text-ink-soft hover:text-red-500'"
                   title="删除分组"
                   @click.stop="removeGroup(group.id)"
@@ -204,13 +201,13 @@ const activeGroupName = computed(() => groups.value.find((g) => g.id === activeG
           </p>
         </div>
 
-        <div class="p-3 border-t-2 border-white/10 space-y-2">
+        <div class="p-3 border-t-2 border-[#e4eaf6] space-y-2">
           <template v-if="session">
             <button class="ac-btn ac-btn-ghost w-full py-2.5 text-sm" @click="modal = 'settings'">
               <Settings :size="16" />
               设置
             </button>
-            <button class="ac-btn ac-btn-ghost w-full py-2.5 text-sm hover:!text-[#ff8b9d] hover:!border-[#5c2b3c]" @click="handleSignOut">
+            <button class="ac-btn ac-btn-ghost w-full py-2.5 text-sm hover:!text-[#d92d20] hover:!border-[#fecdc9]" @click="handleSignOut">
               <LogOut :size="16" />
               退出登录
             </button>
@@ -224,7 +221,7 @@ const activeGroupName = computed(() => groups.value.find((g) => g.id === activeG
 
       <!-- 主区域 -->
       <main class="flex-1 flex flex-col h-full overflow-hidden relative z-10">
-        <header class="px-4 lg:px-8 py-3 lg:py-4 flex items-center gap-3 sticky top-0 z-20 ac-glass border-b-2 border-white/10">
+        <header class="px-4 lg:px-8 py-3 lg:py-4 flex items-center gap-3 sticky top-0 z-20 ac-glass border-b-2 border-[#e4eaf6]">
           <button class="lg:hidden p-2 rounded-2xl bg-surface-2 border-2 border-sakura-100 text-sakura-600 shrink-0" @click="sidebarOpen = true">
             <Menu :size="20" />
           </button>
@@ -236,7 +233,7 @@ const activeGroupName = computed(() => groups.value.find((g) => g.id === activeG
               type="text"
               placeholder="搜索网站、描述…"
               class="w-full pl-11 pr-4 py-2.5 rounded-full bg-surface-2 border-2 border-sakura-100 text-sm text-ink placeholder:text-ink-mute focus:outline-none focus:border-sakura-400 transition-all"
-              style="box-shadow: 0 3px 0 #10162f"
+              style="box-shadow: 0 1px 2px rgba(16, 24, 40, 0.05)"
             >
           </div>
 
@@ -273,7 +270,7 @@ const activeGroupName = computed(() => groups.value.find((g) => g.id === activeG
             <div v-if="visibleWebsites.length === 0" class="flex flex-col items-center justify-center py-16 text-center">
               <div class="relative w-28 h-28 rounded-full flex items-center justify-center mb-5 bg-gradient-to-br from-sakura-50 to-lumi-50 border-2 border-dashed border-sakura-200">
                 <FolderOpen :size="48" class="text-sakura-400" />
-                <span class="absolute -top-2 -right-1 text-2xl animate-ac-float">🌙</span>
+                <span class="absolute -top-2 -right-1 text-2xl">🌙</span>
               </div>
               <h3 class="text-lg font-extrabold text-ink mb-1.5">
                 {{ searchQuery ? '没有找到结果呢 (｡•́︿•̀｡)' : '这里还空空的～' }}
@@ -299,7 +296,7 @@ const activeGroupName = computed(() => groups.value.find((g) => g.id === activeG
                 @click="openWebsite(site)"
               >
                 <div class="flex items-center gap-3">
-                  <div class="w-[52px] h-[52px] shrink-0 rounded-2xl flex items-center justify-center overflow-hidden border-2 border-sakura-100 bg-gradient-to-br from-sakura-50 to-lumi-50 group-hover:rotate-3 group-hover:scale-105 transition-transform duration-300">
+                  <div class="w-[52px] h-[52px] shrink-0 rounded-2xl flex items-center justify-center overflow-hidden border-2 border-sakura-100 bg-gradient-to-br from-sakura-50 to-lumi-50 ">
                     <WebsiteLogo :website="site" />
                   </div>
                   <div class="min-w-0 flex-1">
@@ -313,7 +310,7 @@ const activeGroupName = computed(() => groups.value.find((g) => g.id === activeG
 
                 <!-- 悬浮说明 -->
                 <div class="absolute inset-0 flex items-center justify-center p-5 opacity-0 group-hover:opacity-100 transition-opacity duration-200 rounded-[22px] z-10 pointer-events-none"
-                     style="background-image: linear-gradient(135deg, rgba(21, 27, 61, 0.96), rgba(27, 22, 58, 0.96)); backdrop-filter: blur(4px)">
+                     style="background-image: linear-gradient(135deg, rgba(255, 255, 255, 0.97), rgba(248, 250, 255, 0.97)); backdrop-filter: blur(2px)">
                   <p class="text-xs font-semibold text-ink-soft line-clamp-3 leading-relaxed text-center">
                     {{ site.description || site.url }}
                   </p>
@@ -323,7 +320,7 @@ const activeGroupName = computed(() => groups.value.find((g) => g.id === activeG
                   <button class="p-1.5 rounded-full text-ink-soft hover:text-sakura-600 hover:bg-sakura-50 transition-colors" title="编辑" @click.stop="openWebsiteModal(site)">
                     <Edit2 :size="13" />
                   </button>
-                  <button class="p-1.5 rounded-full text-ink-soft hover:text-rose-400 hover:bg-rose-500/15 transition-colors" title="删除" @click.stop="removeWebsite(site.id)">
+                  <button class="p-1.5 rounded-full text-ink-soft hover:text-[#d92d20] hover:bg-[#fef3f2] transition-colors" title="删除" @click.stop="removeWebsite(site.id)">
                     <Trash2 :size="13" />
                   </button>
                 </div>

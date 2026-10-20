@@ -1,13 +1,11 @@
 import type { Config } from 'tailwindcss';
 
 /**
- * SoloLink 主题色盘（深色 · 冷调二次元）
+ * SoloLink 主题色盘（浅色 · 冷调）
  * ------------------------------------------------------------
- * 注意：本项目是深色底，色阶方向与常规相反——
- *   50 / 100 / 200 = 深色表面、描边（低对比）
- *   300            = 中间态（暗号图标、弱强调）
- *   400 / 500      = 主强调色（清晰可见）
- *   600 / 700      = 高亮（用于小字、链接、hover）
+ * 常规浅色语义：50/100/200 = 浅底与描边，300 = 中间态，
+ * 400/500 = 主强调，600/700 = 深色强调文字。
+ * 整体偏蓝灰与靛蓝，不使用粉色。
  */
 export default {
   content: [
@@ -22,98 +20,79 @@ export default {
       colors: {
         // 文字与表面
         ink: {
-          DEFAULT: '#E7ECFF',
-          soft: '#A3AEDE',
-          mute: '#707DA8',
+          DEFAULT: '#101828',
+          soft: '#475467',
+          mute: '#8A94AB',
         },
         surface: {
-          DEFAULT: '#151B3D',
-          2: '#1B2249',
-          3: '#232B5C',
+          DEFAULT: '#FFFFFF',
+          2: '#F7F9FE',
+          3: '#EEF2FB',
         },
-        // 主色：宝蓝（原樱花位）
+        // 主色：靛蓝
         sakura: {
-          50: '#141A3D',
-          100: '#1D2551',
-          200: '#2A3875',
-          300: '#3F5BB8',
-          400: '#4F7CFF',
-          500: '#6F96FF',
-          600: '#93B2FF',
-          700: '#B6CCFF',
+          50: '#EFF4FF',
+          100: '#DFE9FF',
+          200: '#C3D6FF',
+          300: '#9DBCFF',
+          400: '#6D97FF',
+          500: '#4F7CFF',
+          600: '#3560E0',
+          700: '#2848B8',
         },
-        // 青色：科技感辅助色
+        // 青色：辅助色
         sky: {
-          50: '#0D2530',
-          100: '#123444',
-          200: '#1A4D63',
-          300: '#2586A4',
+          50: '#ECFBFD',
+          100: '#D3F5FA',
+          200: '#A9EBF4',
+          300: '#6ED9E8',
           400: '#2FB8D8',
-          500: '#45D6EC',
-          600: '#75E6F5',
+          500: '#1A9CBB',
+          600: '#147D97',
         },
-        // 紫罗兰：渐变搭档
+        // 靛紫：渐变搭档
         lumi: {
-          50: '#191137',
-          100: '#221849',
-          200: '#32256B',
-          300: '#563FB0',
-          400: '#7C5CF5',
-          500: '#9A7DFF',
-          600: '#B9A2FF',
+          50: '#F4F1FF',
+          100: '#E9E3FF',
+          200: '#D4C9FF',
+          300: '#B5A2FF',
+          400: '#8F72FF',
+          500: '#7C5CF5',
+          600: '#6444D6',
         },
-        // 薄荷绿：成功 / 健康
+        // 薄荷绿：成功
         mint: {
-          50: '#0C2724',
-          100: '#113833',
-          200: '#174E47',
-          300: '#1F8478',
+          50: '#ECFDF7',
+          100: '#D3FBEE',
+          200: '#A6F2DC',
+          300: '#63E3C2',
           400: '#2EC4A8',
-          500: '#46DDC1',
-          600: '#75EAD5',
+          500: '#17A289',
+          600: '#0F816D',
         },
         // 暖金：少量点缀
         sun: {
-          50: '#2A1F0F',
-          100: '#3A2B13',
-          200: '#57401B',
-          300: '#9C7223',
-          400: '#F0B23C',
-          500: '#FFC963',
-          600: '#FFD98F',
+          50: '#FFF8E8',
+          100: '#FFEFC9',
+          200: '#FFE095',
+          300: '#FFCB5C',
+          400: '#F5B027',
+          500: '#D98F10',
+          600: '#B47309',
         },
       },
       fontFamily: {
         rounded: ['PingFang SC', 'HarmonyOS Sans SC', 'Microsoft YaHei UI', 'Microsoft YaHei', 'ui-rounded', 'Segoe UI', 'system-ui', 'sans-serif'],
       },
       borderRadius: {
-        '4xl': '2rem',
+        '4xl': '1.75rem',
       },
       boxShadow: {
-        // 深色底用「实心投影 + 内侧高光」模拟贴纸质感
-        sticker: '0 4px 0 0 #0D1229',
-        'sticker-lg': '0 6px 0 -1px #0D1229, 0 22px 38px -26px rgba(0, 0, 0, 0.9)',
-        glow: '0 0 0 4px rgba(79, 124, 255, 0.22)',
-        pop: '0 16px 38px -18px rgba(79, 124, 255, 0.55)',
-      },
-      keyframes: {
-        'ac-float': {
-          '0%, 100%': { transform: 'translateY(0)' },
-          '50%': { transform: 'translateY(-8px)' },
-        },
-        'ac-pop': {
-          '0%': { opacity: '0', transform: 'translateY(14px) scale(0.96)' },
-          '100%': { opacity: '1', transform: 'translateY(0) scale(1)' },
-        },
-        'ac-twinkle': {
-          '0%, 100%': { opacity: '0.25', transform: 'scale(0.85)' },
-          '50%': { opacity: '0.95', transform: 'scale(1.15)' },
-        },
-      },
-      animation: {
-        'ac-float': 'ac-float 5s ease-in-out infinite',
-        'ac-pop': 'ac-pop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) both',
-        'ac-twinkle': 'ac-twinkle 3.2s ease-in-out infinite',
+        // 浅色底的柔和层叠阴影，不用位移
+        sticker: '0 1px 2px rgba(16, 24, 40, 0.05)',
+        'sticker-lg': '0 1px 2px rgba(16, 24, 40, 0.04), 0 12px 28px -18px rgba(16, 24, 40, 0.16)',
+        glow: '0 0 0 3px rgba(79, 124, 255, 0.16)',
+        pop: '0 20px 44px -24px rgba(16, 24, 40, 0.28)',
       },
     },
   },

@@ -19,8 +19,9 @@
 - 服务端统一用 `server/utils/http.ts` 的 `requireDb` / `requireUserId` / `fail` / `serverError`，错误响应体是 Nitro 标准结构 + `data.error`，前端 `app/utils/api.ts` 按此解析。
 - **DELETE 一律用查询参数传 id**（Workers 上带 body 的 DELETE，`readBody` 会拿到 undefined 并让请求挂起）。
 - 前端不 SSR（`ssr: false`），数据只在客户端登录后加载，页面内容不需要服务端渲染。
-- **主题是深色冷调（宝蓝 / 紫 / 青），色阶方向与常规相反**：`50/100/200` 是深色表面与描边，`300` 中间态，`400/500` 主强调，`600/700` 高亮文字。新增颜色前先读 `tailwind.config.ts` 顶部注释，别按浅色主题的直觉取 50 阶当背景。
-- 深色底**禁止在模板里写 `bg-white`**（会变成刺眼白块），表面用 `bg-surface` / `bg-surface-2` / `bg-surface-3`；卡片、按钮、输入框、徽章一律走 `ac-card` / `ac-btn-*` / `ac-input` / `ac-chip`。
+- **主题是浅色冷调（蓝灰底 + 靛蓝主色），不用粉色**：色阶是常规语义（`50/100/200` 浅底与描边、`400/500` 主强调、`600/700` 深色文字）。视觉集中在 `app/assets/css/tailwind.css` 的 `ac-*` 类与 `tailwind.config.ts` 色盘，模板只写语义 class。
+- **不做装饰性动效**：禁止位移 / 缩放 / 漂浮 / 闪烁动画（`translate-y`、`scale`、`rotate` 的 hover 变换都不要），只保留 hover 的颜色与边框过渡（约 0.16s）以及加载态 `animate-spin`。
+- 表面用 `bg-surface` / `bg-surface-2` / `bg-surface-3`，别在模板里堆 `bg-white` + 硬编码阴影；卡片走 `ac-card`，按钮走 `ac-btn-*`，输入框走 `ac-input`。
 - **`nuxt.config.ts` 必须显式写 `tailwindcss.cssPath: '~/assets/css/tailwind.css'`**：Nuxt 4 的 `srcDir` 是 `app/`，`@nuxtjs/tailwindcss` 默认入口找不到自定义 CSS 时会静默用空文件，构建成功但构建产物里没有任何 `ac-*` 类，线上整站退化成裸样式（排查方法：`grep -c ac-card .output/public/_nuxt/entry.*.css`，正常为 1）。
 
 ## D1 / Drizzle 约束（踩过坑，勿改回）

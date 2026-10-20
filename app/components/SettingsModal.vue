@@ -75,8 +75,8 @@ function goAdmin() {
         v-if="message"
         class="p-3 rounded-2xl flex items-center gap-2 text-sm font-semibold border-2"
         :class="message.type === 'success'
-          ? 'bg-[#0c2724] text-[#46ddc1] border-[#174e47]'
-          : 'bg-[#2a141c] text-[#ff7d93] border-[#5c2b3c]'"
+          ? 'bg-[#ecfdf3] text-[#067647] border-[#abefc6]'
+          : 'bg-[#fef3f2] text-[#d92d20] border-[#fecdc9]'"
       >
         <Check v-if="message.type === 'success'" :size="16" />
         <AlertTriangle v-else :size="16" />
@@ -86,8 +86,8 @@ function goAdmin() {
       <div v-if="isAdmin" class="space-y-2.5">
         <h3 class="ac-section-title">✦ 账号安全</h3>
 
-        <button class="w-full flex items-center gap-3 p-3.5 rounded-2xl bg-surface border-2 border-sakura-100 hover:border-sakura-400 hover:-translate-y-0.5 transition-all text-left" style="box-shadow: 0 3px 0 #10162f" @click="goAdmin">
-          <div class="w-10 h-10 rounded-2xl flex items-center justify-center text-sakura-600 shrink-0" style="background-image: linear-gradient(135deg, #1d2551, #2a3875)">
+        <button class="w-full flex items-center gap-3 p-3.5 rounded-2xl bg-surface border-2 border-sakura-100 hover:border-sakura-400 transition-colors text-left" style="box-shadow: 0 1px 2px rgba(16, 24, 40, 0.05)" @click="goAdmin">
+          <div class="w-10 h-10 rounded-2xl flex items-center justify-center text-sakura-600 shrink-0" style="background-image: linear-gradient(135deg, #EFF4FF, #DFE9FF)">
             <Shield :size="19" />
           </div>
           <div>
@@ -98,11 +98,11 @@ function goAdmin() {
         </button>
 
         <button
-          class="w-full flex items-center gap-3 p-3.5 rounded-2xl bg-surface border-2 border-lumi-100 hover:border-lumi-400 hover:-translate-y-0.5 transition-all text-left"
-          style="box-shadow: 0 3px 0 #10162f"
+          class="w-full flex items-center gap-3 p-3.5 rounded-2xl bg-surface border-2 border-lumi-100 hover:border-lumi-400 transition-colors text-left"
+          style="box-shadow: 0 1px 2px rgba(16, 24, 40, 0.05)"
           @click="emit('close'); emit('changePassword')"
         >
-          <div class="w-10 h-10 rounded-2xl flex items-center justify-center text-lumi-600 shrink-0" style="background-image: linear-gradient(135deg, #221849, #32256b)">
+          <div class="w-10 h-10 rounded-2xl flex items-center justify-center text-lumi-600 shrink-0" style="background-image: linear-gradient(135deg, #F4F1FF, #E9E3FF)">
             <Lock :size="19" />
           </div>
           <div>
@@ -118,11 +118,11 @@ function goAdmin() {
 
         <button
           :disabled="loading"
-          class="w-full flex items-center gap-3 p-3.5 rounded-2xl bg-surface border-2 border-sky-100 hover:border-sky-400 hover:-translate-y-0.5 transition-all text-left disabled:opacity-60"
-          style="box-shadow: 0 3px 0 #10162f"
+          class="w-full flex items-center gap-3 p-3.5 rounded-2xl bg-surface border-2 border-sky-100 hover:border-sky-400 transition-colors text-left disabled:opacity-60"
+          style="box-shadow: 0 1px 2px rgba(16, 24, 40, 0.05)"
           @click="exportData"
         >
-          <div class="w-10 h-10 rounded-2xl flex items-center justify-center text-sky-600 shrink-0" style="background-image: linear-gradient(135deg, #0d2530, #1a4d63)">
+          <div class="w-10 h-10 rounded-2xl flex items-center justify-center text-sky-600 shrink-0" style="background-image: linear-gradient(135deg, #ECFBFD, #D3F5FA)">
             <Download :size="19" />
           </div>
           <div>
@@ -134,11 +134,11 @@ function goAdmin() {
         <input ref="fileInput" type="file" accept=".json" class="hidden" @change="importData">
         <button
           :disabled="loading"
-          class="w-full flex items-center gap-3 p-3.5 rounded-2xl bg-surface border-2 border-mint-100 hover:border-mint-400 hover:-translate-y-0.5 transition-all text-left disabled:opacity-60"
-          style="box-shadow: 0 3px 0 #10162f"
+          class="w-full flex items-center gap-3 p-3.5 rounded-2xl bg-surface border-2 border-mint-100 hover:border-mint-400 transition-colors text-left disabled:opacity-60"
+          style="box-shadow: 0 1px 2px rgba(16, 24, 40, 0.05)"
           @click="fileInput?.click()"
         >
-          <div class="w-10 h-10 rounded-2xl flex items-center justify-center text-mint-600 shrink-0" style="background-image: linear-gradient(135deg, #0c2724, #174e47)">
+          <div class="w-10 h-10 rounded-2xl flex items-center justify-center text-mint-600 shrink-0" style="background-image: linear-gradient(135deg, #ECFDF7, #D3FBEE)">
             <Loader2 v-if="loading" :size="19" class="animate-spin" />
             <Upload v-else :size="19" />
           </div>

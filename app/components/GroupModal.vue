@@ -49,7 +49,7 @@ function submit() {
             class="w-8 h-8 flex items-center justify-center rounded-xl text-lg transition-all"
             :class="icon === option
               ? 'bg-surface ring-2 ring-sakura-400 scale-110 shadow-sm'
-              : 'hover:bg-white/5 hover:scale-110'"
+              : 'hover:bg-[#eff3fb]'"
             @click="icon = option"
           >
             {{ option }}
