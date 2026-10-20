@@ -35,17 +35,19 @@ export async function GET(req: Request) {
     const totalClicks = totalClicksResult[0]?.total || 0;
 
     // Get new users this week
+    // created_at 存的是 Unix 秒（integer），不能用 toISOString() 比较
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    const sevenDaysAgoTimestamp = Math.floor(sevenDaysAgo.getTime() / 1000);
     const newUsersResult = await db.select({ count: count() })
       .from(users)
-      .where(sql`${users.created_at} >= ${sevenDaysAgo.toISOString()}`);
+      .where(sql`${users.created_at} >= ${sevenDaysAgoTimestamp}`);
     const newUsersThisWeek = newUsersResult[0]?.count || 0;
 
     // Get new links this week
     const newLinksResult = await db.select({ count: count() })
       .from(websites)
-      .where(sql`${websites.created_at} >= ${sevenDaysAgo.toISOString()}`);
+      .where(sql`${websites.created_at} >= ${sevenDaysAgoTimestamp}`);
     const newLinksThisWeek = newLinksResult[0]?.count || 0;
 
     return NextResponse.json({

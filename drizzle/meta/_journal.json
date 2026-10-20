@@ -22,6 +22,13 @@
       "when": 1768461183806,
       "tag": "0002_mighty_firestar",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "5",
+      "when": 1770000000000,
+      "tag": "0003_add_is_public",
+      "breakpoints": true
     }
   ]
 }

@@ -81,7 +81,9 @@ export async function POST(req: Request) {
     let title = '';
     let description = '';
     let category = '';
-    let logoUrl = `https://www.google.com/s2/favicons?domain=${urlObj.hostname}&sz=64`;
+    // Prefer a first-party URL. Google/gstatic favicon endpoints return visible 404s
+    // for many private or uncommon domains.
+    let logoUrl = `${urlObj.origin}/favicon.ico`;
 
     try {
       const { env } = getCloudflareContext();

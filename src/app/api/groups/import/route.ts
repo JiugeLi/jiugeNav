@@ -56,6 +56,7 @@ export async function POST(req: Request) {
           name: grp.name,
           icon: grp.icon,
           sort_order: grp.sort_order,
+          created_at: new Date(),
       }).returning();
       
       if (grp.id) {
@@ -76,6 +77,7 @@ export async function POST(req: Request) {
             logo_type: site.logo_type,
             description: site.description,
             sort_order: site.sort_order,
+            created_at: new Date(),
         });
       }
     }

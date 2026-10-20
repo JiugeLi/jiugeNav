@@ -8,6 +8,7 @@ export const users = sqliteTable('users', {
   name: text('name'),
   avatar: text('avatar'),
   google_id: text('google_id').unique(),
+  // 库中仍是 CURRENT_TIMESTAMP 默认值（文本），代码插入时必须显式传 created_at。
   created_at: integer('created_at', { mode: 'timestamp' }).default(sql`CURRENT_TIMESTAMP`).notNull(),
   last_login: integer('last_login', { mode: 'timestamp' }),
 });
@@ -19,6 +20,7 @@ export const groups = sqliteTable('groups', {
   name: text('name').notNull(),
   icon: text('icon').default('📁').notNull(),
   sort_order: integer('sort_order').default(0).notNull(),
+  // 库中仍是 CURRENT_TIMESTAMP 默认值（文本），代码插入时必须显式传 created_at。
   created_at: integer('created_at', { mode: 'timestamp' }).default(sql`CURRENT_TIMESTAMP`).notNull(),
 });
 
@@ -37,7 +39,9 @@ export const websites = sqliteTable('websites', {
   sort_order: integer('sort_order').default(0).notNull(),
   click_count: integer('click_count').default(0).notNull(),
   last_clicked_at: integer('last_clicked_at', { mode: 'timestamp' }),
-  created_at: integer('created_at', { mode: 'timestamp' }).default(sql`CURRENT_TIMESTAMP`).notNull(),
+  // 必须与迁移后的库默认值一致：`integer DEFAULT (unixepoch())`。
+  // SQLite 的 CURRENT_TIMESTAMP 写入的是文本，Drizzle 按 Unix 秒解析会得到 null。
+  created_at: integer('created_at', { mode: 'timestamp' }).default(sql`(unixepoch())`).notNull(),
   is_public: integer('is_public').default(1).notNull(),
 });
 

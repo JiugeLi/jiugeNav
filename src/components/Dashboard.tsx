@@ -22,46 +22,29 @@ const WebsiteLogo = ({ website }: { website: Website }) => {
   const [failed, setFailed] = useState(false);
 
   useEffect(() => {
-    if (!website.logo_url) {
-        setFailed(true);
-        return;
-    }
-    
-    if (website.logo_url.startsWith('https://')) {
-        setImgSrc(website.logo_url);
-        setFailed(false);
-    } else {
-        // Upgrade HTTP to Google Favicon to avoid Mixed Content
-        try {
-            const domain = new URL(website.url).hostname;
-            setImgSrc(`https://www.google.com/s2/favicons?domain=${domain}&sz=64`);
-            setFailed(false);
-        } catch {
-            setFailed(true);
-        }
+    try {
+      const siteUrl = new URL(website.url);
+      const savedLogo = website.logo_url?.trim();
+      const isGoogleFavicon = savedLogo &&
+        (savedLogo.includes('google.com/s2/favicons') || savedLogo.includes('gstatic.com/faviconV2'));
+
+      // Google's favicon service frequently returns noisy 404 responses for intranet
+      // and less common domains. Use the site's conventional favicon instead.
+      const nextSrc = !savedLogo || isGoogleFavicon || !savedLogo.startsWith('https://')
+        ? `${siteUrl.origin}/favicon.ico`
+        : savedLogo;
+
+      setImgSrc(nextSrc);
+      setFailed(false);
+    } catch {
+      setImgSrc(null);
+      setFailed(true);
     }
   }, [website.logo_url, website.url]);
 
   const handleError = () => {
-      // If we are already using Google Favicon, or if we were using original HTTPS and it failed,
-      // let's try Google Favicon if we haven't yet.
-      
-      if (imgSrc && imgSrc.includes('google.com/s2/favicons')) {
-          setFailed(true);
-      } else {
-          // Try Google Favicon fallback
-          try {
-            const domain = new URL(website.url).hostname;
-            const fallbackUrl = `https://www.google.com/s2/favicons?domain=${domain}&sz=64`;
-            if (imgSrc !== fallbackUrl) {
-                setImgSrc(fallbackUrl);
-            } else {
-                setFailed(true);
-            }
-          } catch {
-            setFailed(true);
-          }
-      }
+    // Do not call a third-party favicon proxy after a failure; display a quiet fallback.
+    setFailed(true);
   };
 
   if (failed || !imgSrc) {
@@ -206,6 +189,7 @@ export default function Dashboard() {
       setEditingWebsite(null);
     } catch (error) {
       console.error('Error saving website', error);
+      alert(error instanceof Error ? error.message : '保存网站失败，请稍后重试');
     }
   };
 

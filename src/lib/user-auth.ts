@@ -51,6 +51,7 @@ export async function loginOrCreateUserWithGoogle(googleInfo: GoogleUserInfo): P
         avatar: googleInfo.picture,
         google_id: googleInfo.id,
         last_login: new Date(),
+        created_at: new Date(),
       }).returning();
 
       user = result;

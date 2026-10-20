@@ -1,8 +1,8 @@
 import { getCloudflareContext } from '@opennextjs/cloudflare';
 import { createDb } from '@/db';
-import { websites } from '@/db/schema';
+import { groups, websites } from '@/db/schema';
 import { NextResponse } from 'next/server';
-import { desc, asc, eq } from 'drizzle-orm';
+import { desc, asc, eq, and } from 'drizzle-orm';
 import { getCurrentUserId } from '@/lib/get-current-user';
 
 // 本地开发模式标志
@@ -121,21 +121,47 @@ export async function POST(req: Request) {
       sort_order,
     } = body;
 
-    if (!group_id || !name || !url) {
-      return new NextResponse('Missing required fields', { status: 400 });
+    const groupId = Number(group_id);
+    const trimmedName = name?.trim();
+    let normalizedUrl: string;
+
+    try {
+      const urlWithProtocol = /^https?:\/\//i.test(url?.trim() || '')
+        ? url.trim()
+        : `https://${url?.trim() || ''}`;
+      const parsedUrl = new URL(urlWithProtocol);
+      if (!['http:', 'https:'].includes(parsedUrl.protocol)) throw new Error('Invalid protocol');
+      normalizedUrl = parsedUrl.href;
+    } catch {
+      return NextResponse.json({ error: '请输入有效的网站地址' }, { status: 400 });
+    }
+
+    if (!Number.isInteger(groupId) || groupId <= 0 || !trimmedName) {
+      return NextResponse.json({ error: '网站名称和有效分组为必填项' }, { status: 400 });
+    }
+
+    // A client-provided group id must belong to the current user. This also turns
+    // foreign-key failures into a useful 400 response.
+    const group = await db.select({ id: groups.id }).from(groups).where(and(
+      eq(groups.id, groupId),
+      eq(groups.user_id, userId)
+    )).limit(1);
+    if (!group.length) {
+      return NextResponse.json({ error: '所选分组不存在，请刷新页面后重试' }, { status: 400 });
     }
 
     const result = await db.insert(websites).values({
         user_id: userId,
-        group_id: parseInt(group_id),
-        name,
-        url,
-        logo_url,
+        group_id: groupId,
+        name: trimmedName,
+        url: normalizedUrl,
+        logo_url: logo_url?.trim() || null,
         logo_type: logo_type || 'default',
-        description,
-        username,
-        password,
-        sort_order: sort_order || 0,
+        description: description?.trim() || null,
+        username: username?.trim() || null,
+        password: password || null,
+        sort_order: Number.isFinite(Number(sort_order)) ? Number(sort_order) : 0,
+        created_at: new Date(),
     }).returning();
 
     return NextResponse.json(result[0]);

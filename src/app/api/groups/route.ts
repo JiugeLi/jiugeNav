@@ -95,6 +95,7 @@ export async function POST(req: Request) {
         name,
         icon: icon || '📁',
         sort_order: sort_order || 0,
+        created_at: new Date(),
     }).returning();
 
     return NextResponse.json(result[0]);

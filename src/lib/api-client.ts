@@ -25,14 +25,28 @@ export async function apiClient(url: string, options: RequestInit = {}): Promise
   });
 }
 
+async function throwApiError(response: Response): Promise<never> {
+  let message = '';
+  try {
+    const contentType = response.headers.get('content-type') || '';
+    if (contentType.includes('application/json')) {
+      const body = await response.json() as { error?: string; message?: string };
+      message = body.error || body.message || '';
+    } else {
+      message = await response.text();
+    }
+  } catch {
+    // Keep the status-only fallback when the response body cannot be read.
+  }
+  throw new Error(message || `API Error: ${response.status}`);
+}
+
 /**
  * GET 请求
  */
 export async function apiGet<T = any>(url: string): Promise<T> {
   const response = await apiClient(url, { method: 'GET' });
-  if (!response.ok) {
-    throw new Error(`API Error: ${response.status}`);
-  }
+  if (!response.ok) await throwApiError(response);
   return response.json();
 }
 
@@ -44,9 +58,7 @@ export async function apiPost<T = any>(url: string, data: any): Promise<T> {
     method: 'POST',
     body: JSON.stringify(data),
   });
-  if (!response.ok) {
-    throw new Error(`API Error: ${response.status}`);
-  }
+  if (!response.ok) await throwApiError(response);
   return response.json();
 }
 
@@ -58,9 +70,7 @@ export async function apiPut<T = any>(url: string, data: any): Promise<T> {
     method: 'PUT',
     body: JSON.stringify(data),
   });
-  if (!response.ok) {
-    throw new Error(`API Error: ${response.status}`);
-  }
+  if (!response.ok) await throwApiError(response);
   return response.json();
 }
 
@@ -69,8 +79,6 @@ export async function apiPut<T = any>(url: string, data: any): Promise<T> {
  */
 export async function apiDelete<T = any>(url: string): Promise<T> {
   const response = await apiClient(url, { method: 'DELETE' });
-  if (!response.ok) {
-    throw new Error(`API Error: ${response.status}`);
-  }
+  if (!response.ok) await throwApiError(response);
   return response.json();
 }
