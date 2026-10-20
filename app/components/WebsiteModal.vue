@@ -57,7 +57,7 @@ function submit() {
   <Modal :open="open" width="max-w-lg" @close="emit('close')">
     <template #title>
       <Sparkles :size="18" class="text-sakura-500" />
-      {{ initial ? '✎ 编辑网站' : '✿ 添加网站' }}
+      {{ initial ? '✎ 编辑网站' : '◆ 添加网站' }}
     </template>
 
     <form class="p-6 space-y-5" @submit.prevent="submit">
@@ -105,9 +105,9 @@ function submit() {
           <label class="ac-label"><ImageIcon :size="14" />图标地址</label>
           <div class="flex items-center gap-3">
             <input v-model="form.logo_url" type="text" class="ac-input flex-1" placeholder="留空则使用站点 favicon">
-            <div class="w-12 h-12 rounded-2xl bg-white border-2 border-sakura-100 flex items-center justify-center overflow-hidden shrink-0">
+            <div class="w-12 h-12 rounded-2xl bg-surface border-2 border-sakura-100 flex items-center justify-center overflow-hidden shrink-0">
               <img v-if="form.logo_url" :src="form.logo_url" alt="" class="w-8 h-8 object-contain">
-              <Globe v-else class="text-sakura-300" :size="20" />
+              <Globe v-else class="text-sakura-400" :size="20" />
             </div>
           </div>
         </div>

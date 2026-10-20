@@ -26,9 +26,9 @@ const stars = [
 <template>
   <div class="ac-deco" aria-hidden="true">
     <div class="ac-dots" />
-    <div class="ac-blob" style="top: -12%; left: -8%; width: 42vw; height: 42vw; background: radial-gradient(circle, #ffc9e2 0%, rgba(255, 201, 226, 0) 70%)" />
-    <div class="ac-blob" style="top: 8%; right: -10%; width: 38vw; height: 38vw; background: radial-gradient(circle, #c9e6ff 0%, rgba(201, 230, 255, 0) 70%); animation-delay: -5s" />
-    <div class="ac-blob" style="bottom: -16%; left: 28%; width: 46vw; height: 46vw; background: radial-gradient(circle, #ddd0ff 0%, rgba(221, 208, 255, 0) 70%); animation-delay: -9s" />
+    <div class="ac-blob" style="top: -12%; left: -8%; width: 42vw; height: 42vw; background: radial-gradient(circle, #4f7cff 0%, rgba(79, 124, 255, 0) 70%)" />
+    <div class="ac-blob" style="top: 8%; right: -10%; width: 38vw; height: 38vw; background: radial-gradient(circle, #45d6ec 0%, rgba(69, 214, 236, 0) 70%); animation-delay: -5s" />
+    <div class="ac-blob" style="bottom: -16%; left: 28%; width: 46vw; height: 46vw; background: radial-gradient(circle, #7c5cf5 0%, rgba(124, 92, 245, 0) 70%); animation-delay: -9s" />
 
     <span
       v-for="star in stars"

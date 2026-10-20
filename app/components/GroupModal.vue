@@ -32,7 +32,7 @@ function submit() {
 </script>
 
 <template>
-  <Modal :open="open" :title="initial ? '✎ 编辑分组' : '✿ 新建分组'" @close="emit('close')">
+  <Modal :open="open" :title="initial ? '✎ 编辑分组' : '◆ 新建分组'" @close="emit('close')">
     <form class="p-6 space-y-5" @submit.prevent="submit">
       <div>
         <label class="ac-label">分组名称</label>
@@ -48,8 +48,8 @@ function submit() {
             type="button"
             class="w-8 h-8 flex items-center justify-center rounded-xl text-lg transition-all"
             :class="icon === option
-              ? 'bg-white ring-2 ring-sakura-300 scale-110 shadow-sm'
-              : 'hover:bg-white/90 hover:scale-110'"
+              ? 'bg-surface ring-2 ring-sakura-400 scale-110 shadow-sm'
+              : 'hover:bg-white/5 hover:scale-110'"
             @click="icon = option"
           >
             {{ option }}

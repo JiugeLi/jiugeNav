@@ -46,8 +46,8 @@ async function submit() {
     <template #title><Lock :size="18" class="text-sakura-500" />修改管理员密码</template>
 
     <form class="p-6 space-y-4" @submit.prevent="submit">
-      <div v-if="error" class="p-3 rounded-2xl bg-[#fff1f4] border-2 border-[#ffd9e2] text-sm font-semibold text-[#e0405f]">{{ error }}</div>
-      <div v-if="success" class="p-3 rounded-2xl bg-[#f1fffb] border-2 border-[#b7f5e3] text-sm font-semibold text-[#17a382]">{{ success }}</div>
+      <div v-if="error" class="p-3 rounded-2xl bg-[#2a141c] border-2 border-[#5c2b3c] text-sm font-semibold text-[#ff7d93]">{{ error }}</div>
+      <div v-if="success" class="p-3 rounded-2xl bg-[#0c2724] border-2 border-[#174e47] text-sm font-semibold text-[#46ddc1]">{{ success }}</div>
 
       <div>
         <label class="ac-label">新密码</label>

@@ -11,15 +11,15 @@ const emit = defineEmits<{ close: [] }>();
 
 <template>
   <div v-if="open" class="fixed inset-0 z-50 flex items-center justify-center p-4">
-    <div class="absolute inset-0 bg-[#2b1b3d]/30 backdrop-blur-md" @click="emit('close')" />
+    <div class="absolute inset-0 bg-[#03050e]/70 backdrop-blur-md" @click="emit('close')" />
 
     <div
-      class="relative w-full flex flex-col max-h-[90vh] overflow-hidden animate-ac-pop rounded-[28px] bg-white border-2 border-sakura-200"
-      style="box-shadow: 0 8px 0 -2px #ffe1ef, 0 34px 70px -30px rgba(120, 84, 168, 0.6)"
+      class="relative w-full flex flex-col max-h-[90vh] overflow-hidden animate-ac-pop rounded-[28px] bg-surface border-2 border-sakura-200"
+      style="box-shadow: 0 8px 0 -2px #0b1020, 0 34px 70px -30px rgba(0, 0, 0, 0.85)"
       :class="width"
     >
       <!-- 顶部彩条 -->
-      <div class="h-1.5 w-full bg-gradient-to-r from-sakura-300 via-lumi-300 to-sky-300" />
+      <div class="h-1.5 w-full bg-gradient-to-r from-sakura-400 via-lumi-400 to-sky-400" />
 
       <div class="px-6 py-4 flex items-center justify-between gap-3 flex-shrink-0 bg-gradient-to-br from-sakura-50 to-lumi-50/70">
         <h2 class="text-base font-extrabold text-ink flex items-center gap-2">
@@ -30,7 +30,7 @@ const emit = defineEmits<{ close: [] }>();
         </h2>
         <button
           aria-label="关闭"
-          class="p-2 rounded-full text-ink-soft bg-white/80 border border-sakura-100 hover:text-sakura-600 hover:border-sakura-300 hover:rotate-90 transition-all duration-200"
+          class="p-2 rounded-full text-ink-soft bg-surface-2 border border-sakura-100 hover:text-sakura-600 hover:border-sakura-400 hover:rotate-90 transition-all duration-200"
           @click="emit('close')"
         >
           <X :size="18" />

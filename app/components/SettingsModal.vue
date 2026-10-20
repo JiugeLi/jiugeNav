@@ -75,8 +75,8 @@ function goAdmin() {
         v-if="message"
         class="p-3 rounded-2xl flex items-center gap-2 text-sm font-semibold border-2"
         :class="message.type === 'success'
-          ? 'bg-[#f1fffb] text-[#17a382] border-[#b7f5e3]'
-          : 'bg-[#fff1f4] text-[#e0405f] border-[#ffd9e2]'"
+          ? 'bg-[#0c2724] text-[#46ddc1] border-[#174e47]'
+          : 'bg-[#2a141c] text-[#ff7d93] border-[#5c2b3c]'"
       >
         <Check v-if="message.type === 'success'" :size="16" />
         <AlertTriangle v-else :size="16" />
@@ -86,23 +86,23 @@ function goAdmin() {
       <div v-if="isAdmin" class="space-y-2.5">
         <h3 class="ac-section-title">✦ 账号安全</h3>
 
-        <button class="w-full flex items-center gap-3 p-3.5 rounded-2xl bg-white border-2 border-sakura-100 hover:border-sakura-300 hover:-translate-y-0.5 transition-all text-left" style="box-shadow: 0 3px 0 #ffeef6" @click="goAdmin">
-          <div class="w-10 h-10 rounded-2xl flex items-center justify-center text-sakura-600 shrink-0" style="background-image: linear-gradient(135deg, #ffe8f2, #ffd2e5)">
+        <button class="w-full flex items-center gap-3 p-3.5 rounded-2xl bg-surface border-2 border-sakura-100 hover:border-sakura-400 hover:-translate-y-0.5 transition-all text-left" style="box-shadow: 0 3px 0 #10162f" @click="goAdmin">
+          <div class="w-10 h-10 rounded-2xl flex items-center justify-center text-sakura-600 shrink-0" style="background-image: linear-gradient(135deg, #1d2551, #2a3875)">
             <Shield :size="19" />
           </div>
           <div>
             <div class="font-extrabold text-sm text-ink">管理后台</div>
             <div class="text-[11px] font-semibold text-ink-mute">用户、链接、数据管理</div>
           </div>
-          <span class="ml-auto text-sakura-300">›</span>
+          <span class="ml-auto text-sakura-400">›</span>
         </button>
 
         <button
-          class="w-full flex items-center gap-3 p-3.5 rounded-2xl bg-white border-2 border-lumi-100 hover:border-lumi-300 hover:-translate-y-0.5 transition-all text-left"
-          style="box-shadow: 0 3px 0 #f2ecff"
+          class="w-full flex items-center gap-3 p-3.5 rounded-2xl bg-surface border-2 border-lumi-100 hover:border-lumi-400 hover:-translate-y-0.5 transition-all text-left"
+          style="box-shadow: 0 3px 0 #10162f"
           @click="emit('close'); emit('changePassword')"
         >
-          <div class="w-10 h-10 rounded-2xl flex items-center justify-center text-lumi-600 shrink-0" style="background-image: linear-gradient(135deg, #f1eaff, #dfd0ff)">
+          <div class="w-10 h-10 rounded-2xl flex items-center justify-center text-lumi-600 shrink-0" style="background-image: linear-gradient(135deg, #221849, #32256b)">
             <Lock :size="19" />
           </div>
           <div>
@@ -118,11 +118,11 @@ function goAdmin() {
 
         <button
           :disabled="loading"
-          class="w-full flex items-center gap-3 p-3.5 rounded-2xl bg-white border-2 border-sky-100 hover:border-sky-300 hover:-translate-y-0.5 transition-all text-left disabled:opacity-60"
-          style="box-shadow: 0 3px 0 #eaf6ff"
+          class="w-full flex items-center gap-3 p-3.5 rounded-2xl bg-surface border-2 border-sky-100 hover:border-sky-400 hover:-translate-y-0.5 transition-all text-left disabled:opacity-60"
+          style="box-shadow: 0 3px 0 #10162f"
           @click="exportData"
         >
-          <div class="w-10 h-10 rounded-2xl flex items-center justify-center text-sky-600 shrink-0" style="background-image: linear-gradient(135deg, #e9f6ff, #c4e8ff)">
+          <div class="w-10 h-10 rounded-2xl flex items-center justify-center text-sky-600 shrink-0" style="background-image: linear-gradient(135deg, #0d2530, #1a4d63)">
             <Download :size="19" />
           </div>
           <div>
@@ -134,11 +134,11 @@ function goAdmin() {
         <input ref="fileInput" type="file" accept=".json" class="hidden" @change="importData">
         <button
           :disabled="loading"
-          class="w-full flex items-center gap-3 p-3.5 rounded-2xl bg-white border-2 border-mint-100 hover:border-mint-300 hover:-translate-y-0.5 transition-all text-left disabled:opacity-60"
-          style="box-shadow: 0 3px 0 #eafbf5"
+          class="w-full flex items-center gap-3 p-3.5 rounded-2xl bg-surface border-2 border-mint-100 hover:border-mint-400 hover:-translate-y-0.5 transition-all text-left disabled:opacity-60"
+          style="box-shadow: 0 3px 0 #10162f"
           @click="fileInput?.click()"
         >
-          <div class="w-10 h-10 rounded-2xl flex items-center justify-center text-mint-600 shrink-0" style="background-image: linear-gradient(135deg, #e8fdf7, #b7f5e3)">
+          <div class="w-10 h-10 rounded-2xl flex items-center justify-center text-mint-600 shrink-0" style="background-image: linear-gradient(135deg, #0c2724, #174e47)">
             <Loader2 v-if="loading" :size="19" class="animate-spin" />
             <Upload v-else :size="19" />
           </div>
@@ -150,7 +150,7 @@ function goAdmin() {
       </div>
 
       <p class="text-[11px] font-bold text-center text-ink-mute pt-3 border-t-2 border-sakura-50">
-        ✿ SoloLink v2.0.0 · 用爱发电 ✿
+        SoloLink v2.0.0 · Self-hosted
       </p>
     </div>
   </Modal>

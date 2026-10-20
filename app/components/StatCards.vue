@@ -7,23 +7,23 @@ const props = defineProps<{ stats: Stats }>();
 const cards = [
   {
     key: 'totalLinks', label: '总链接数', icon: Link2, emoji: '🔗',
-    bg: 'linear-gradient(135deg, #ffb3d3 0%, #ff7fb4 55%, #ff9ecb 100%)',
-    ring: '#ffd9ea', ink: '#ffffff',
+    bg: 'linear-gradient(135deg, #4f7cff 0%, #3457d8 55%, #7c5cf5 100%)',
+    ring: '#1b2250', ink: '#ffffff',
   },
   {
     key: 'totalClicks', label: '总点击量', icon: MousePointerClick, emoji: '💖',
-    bg: 'linear-gradient(135deg, #9bf2dd 0%, #5fe0be 55%, #67d6ff 100%)',
-    ring: '#c9fbef', ink: '#ffffff',
+    bg: 'linear-gradient(135deg, #46ddc1 0%, #2ec4a8 55%, #2fb8d8 100%)',
+    ring: '#0e2f2c', ink: '#ffffff',
   },
   {
     key: 'weeklyClicks', label: '本周点击', icon: Calendar, emoji: '✨',
-    bg: 'linear-gradient(135deg, #d3c2ff 0%, #a88cff 55%, #c9a6ff 100%)',
-    ring: '#e6dcff', ink: '#ffffff',
+    bg: 'linear-gradient(135deg, #9a7dff 0%, #7c5cf5 55%, #6a63ff 100%)',
+    ring: '#211a4d', ink: '#ffffff',
   },
   {
     key: 'newLinksThisWeek', label: '本周新增', icon: Plus, emoji: '🌱',
-    bg: 'linear-gradient(135deg, #ffe3ac 0%, #ffc46b 55%, #ffb0a0 100%)',
-    ring: '#fff0d2', ink: '#ffffff',
+    bg: 'linear-gradient(135deg, #ffc963 0%, #f0992e 55%, #e8734a 100%)',
+    ring: '#33260f', ink: '#ffffff',
   },
 ] as const;
 </script>
@@ -33,8 +33,8 @@ const cards = [
     <div
       v-for="card in cards"
       :key="card.key"
-      class="relative overflow-hidden rounded-3xl p-4 sm:p-5 border-2 border-white/70 transition-transform duration-300 hover:-translate-y-1 hover:scale-[1.02]"
-      :style="{ backgroundImage: card.bg, boxShadow: `0 6px 0 -1px ${card.ring}, 0 22px 34px -24px rgba(120, 84, 168, 0.75)` }"
+      class="relative overflow-hidden rounded-3xl p-4 sm:p-5 border-2 border-white/15 transition-transform duration-300 hover:-translate-y-1 hover:scale-[1.02]"
+      :style="{ backgroundImage: card.bg, boxShadow: `0 6px 0 -1px ${card.ring}, 0 22px 34px -24px rgba(0, 0, 0, 0.85)` }"
     >
       <div class="absolute inset-0 opacity-40" style="background-image: radial-gradient(rgba(255, 255, 255, 0.95) 1px, transparent 1px); background-size: 14px 14px" />
       <span class="absolute -right-2 -bottom-3 text-5xl opacity-25 select-none">{{ card.emoji }}</span>
@@ -47,7 +47,7 @@ const cards = [
             {{ props.stats[card.key] }}
           </p>
         </div>
-        <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-white/30 border border-white/50 flex items-center justify-center text-white shrink-0">
+        <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-white/15 border border-white/25 flex items-center justify-center text-white shrink-0">
           <component :is="card.icon" :size="18" />
         </div>
       </div>

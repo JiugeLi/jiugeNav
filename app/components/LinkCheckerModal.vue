@@ -151,24 +151,24 @@ function close() {
             <span class="font-extrabold text-sakura-600">{{ progress }}%</span>
           </div>
           <div class="w-full rounded-full h-3 overflow-hidden border-2 border-sakura-100 bg-sakura-50">
-            <div class="h-full rounded-full transition-all duration-300" style="background-image: linear-gradient(90deg, #ffb3d3, #ff7fb4 50%, #a88cff)" :style="{ width: `${progress}%` }" />
+            <div class="h-full rounded-full transition-all duration-300" style="background-image: linear-gradient(90deg, #45d6ec, #4f7cff 50%, #7c5cf5)" :style="{ width: `${progress}%` }" />
           </div>
         </div>
 
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-          <div class="rounded-2xl p-3 text-center bg-white border-2 border-sakura-100" style="box-shadow: 0 3px 0 #ffeef6">
+          <div class="rounded-2xl p-3 text-center bg-surface border-2 border-sakura-100" style="box-shadow: 0 3px 0 #10162f">
             <div class="text-xl font-extrabold text-ink">{{ results.length }}</div>
             <div class="text-[11px] font-bold text-ink-mute">总链接数</div>
           </div>
-          <div class="rounded-2xl p-3 text-center bg-white border-2 border-mint-100" style="box-shadow: 0 3px 0 #eafbf5">
+          <div class="rounded-2xl p-3 text-center bg-surface border-2 border-mint-100" style="box-shadow: 0 3px 0 #10162f">
             <div class="text-xl font-extrabold text-mint-600">{{ okCount }}</div>
             <div class="text-[11px] font-bold text-ink-mute">正常链接</div>
           </div>
-          <div class="rounded-2xl p-3 text-center bg-white border-2 border-[#ffd9e2]" style="box-shadow: 0 3px 0 #ffe7ec">
-            <div class="text-xl font-extrabold text-[#e0405f]">{{ badLinks.length }}</div>
+          <div class="rounded-2xl p-3 text-center bg-surface border-2 border-[#5c2b3c]" style="box-shadow: 0 3px 0 #10162f">
+            <div class="text-xl font-extrabold text-[#ff7d93]">{{ badLinks.length }}</div>
             <div class="text-[11px] font-bold text-ink-mute">失效链接</div>
           </div>
-          <div class="rounded-2xl p-3 text-center bg-white border-2 border-sky-100" style="box-shadow: 0 3px 0 #eaf6ff">
+          <div class="rounded-2xl p-3 text-center bg-surface border-2 border-sky-100" style="box-shadow: 0 3px 0 #10162f">
             <div class="text-xl font-extrabold text-sky-600">{{ pendingCount }}</div>
             <div class="text-[11px] font-bold text-ink-mute">待检查</div>
           </div>
@@ -176,7 +176,7 @@ function close() {
 
         <div v-if="!checking && badLinks.length > 0" class="flex items-center justify-between gap-2 bg-sakura-50/70 rounded-2xl p-3 border-2 border-sakura-100">
           <span class="text-sm font-semibold text-ink-soft">
-            已选择 <span class="font-extrabold text-[#e0405f]">{{ selectedIds.size }}</span> 个链接待删除
+            已选择 <span class="font-extrabold text-[#ff7d93]">{{ selectedIds.size }}</span> 个链接待删除
           </span>
           <div class="flex gap-2 shrink-0">
             <button class="ac-btn ac-btn-ghost px-3 py-1.5 text-xs" @click="selectedIds = new Set(badLinks.map((r) => r.id))">
@@ -195,17 +195,17 @@ function close() {
             class="rounded-2xl p-3 flex items-start gap-3 border-2 transition-colors"
             :class="link.status === 'checking' ? 'bg-sky-50 border-sky-100'
               : link.status === 'ok' ? 'bg-mint-50 border-mint-100'
-              : selectedIds.has(link.id) ? 'bg-[#ffe7ec] border-[#ffb8c8]' : 'bg-[#fff5f7] border-[#ffd9e2]'"
+              : selectedIds.has(link.id) ? 'bg-[#1d2551] border-[#4f7cff]' : 'bg-[#241427] border-[#5c2b3c]'"
           >
             <button v-if="isBad(link) && !checking" class="shrink-0 mt-0.5" @click="toggle(link.id)">
-              <CheckSquare v-if="selectedIds.has(link.id)" class="text-[#e0405f]" :size="19" />
+              <CheckSquare v-if="selectedIds.has(link.id)" class="text-[#ff7d93]" :size="19" />
               <Square v-else class="text-ink-mute" :size="19" />
             </button>
 
             <Loader2 v-if="link.status === 'checking'" class="text-sky-500 animate-spin shrink-0" :size="19" />
             <CheckCircle v-else-if="link.status === 'ok'" class="text-mint-500 shrink-0" :size="19" />
             <AlertCircle v-else-if="link.status === 'timeout'" class="text-sun-500 shrink-0" :size="19" />
-            <XCircle v-else class="text-[#e0405f] shrink-0" :size="19" />
+            <XCircle v-else class="text-[#ff7d93] shrink-0" :size="19" />
 
             <div class="flex-1 min-w-0">
               <div class="font-extrabold text-sm text-ink truncate">{{ link.name }}</div>
@@ -213,7 +213,7 @@ function close() {
               <span v-if="link.status === 'checking'" class="text-[11px] font-bold text-sky-600">检查中…</span>
               <span v-else-if="link.status === 'ok'" class="text-[11px] font-bold text-mint-600">正常 ({{ link.statusCode }})</span>
               <span v-else-if="link.status === 'timeout'" class="text-[11px] font-bold text-sun-600">超时</span>
-              <span v-else class="text-[11px] font-bold text-[#e0405f]">错误 ({{ link.statusCode || link.error }})</span>
+              <span v-else class="text-[11px] font-bold text-[#ff7d93]">错误 ({{ link.statusCode || link.error }})</span>
             </div>
           </div>
         </div>

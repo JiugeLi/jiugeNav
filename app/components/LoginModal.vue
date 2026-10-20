@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue';
-import { Loader2, Lock, Sparkles } from 'lucide-vue-next';
+import { Link2, Loader2, Lock, Sparkles } from 'lucide-vue-next';
 import Modal from './Modal.vue';
 import { apiPost } from '~/utils/api';
 import { useStore } from '~/composables/useStore';
@@ -91,7 +91,12 @@ async function submitPassword() {
 
     <div class="p-6 space-y-5">
       <div class="text-center space-y-1 pb-1">
-        <div class="text-4xl animate-ac-float">🌸</div>
+        <div
+          class="w-14 h-14 mx-auto rounded-2xl flex items-center justify-center text-white animate-ac-float"
+          style="background-image: linear-gradient(140deg, #4f7cff, #5f6fff 55%, #7c5cf5); box-shadow: 0 4px 0 #2b3fa8"
+        >
+          <Link2 :size="26" />
+        </div>
         <p class="text-xs font-bold tracking-[0.2em] text-ink-mute">SOLOLINK · 私藏书签站</p>
       </div>
 
@@ -104,7 +109,7 @@ async function submitPassword() {
       <div v-if="googleClientId" class="relative py-1">
         <div class="absolute inset-0 flex items-center"><div class="ac-divider w-full" /></div>
         <div class="relative flex justify-center">
-          <span class="px-3 bg-white text-[11px] font-bold tracking-wider text-ink-mute">或使用管理员密码</span>
+          <span class="px-3 bg-surface text-[11px] font-bold tracking-wider text-ink-mute">或使用管理员密码</span>
         </div>
       </div>
 
@@ -120,7 +125,7 @@ async function submitPassword() {
           >
         </div>
 
-        <div v-if="error" class="p-3 rounded-2xl bg-[#fff1f4] border-2 border-[#ffd9e2] text-[#e0405f] text-sm font-semibold text-center">
+        <div v-if="error" class="p-3 rounded-2xl bg-[#2a141c] border-2 border-[#5c2b3c] text-[#ff7d93] text-sm font-semibold text-center">
           {{ error }}
         </div>
 
