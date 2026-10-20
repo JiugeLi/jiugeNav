@@ -1,4 +1,4 @@
-name: Deploy to Cloudflare
+name: Build
 
 on:
   push:
@@ -6,9 +6,8 @@ on:
       - main
 
 jobs:
-  deploy:
+  build:
     runs-on: ubuntu-latest
-    name: Deploy
     steps:
       - uses: actions/checkout@v4
 
@@ -22,14 +21,10 @@ jobs:
         # 用 install 而不是 ci：Windows 上生成的 lock 与 Linux 可选依赖解析不完全一致
         run: npm install --no-audit --no-fund
 
+      - name: Typecheck
+        run: npm run typecheck
+
       - name: Build (Nuxt / Nitro → Cloudflare Workers)
         run: npm run build
         env:
           NUXT_PUBLIC_GOOGLE_CLIENT_ID: ${{ secrets.NUXT_PUBLIC_GOOGLE_CLIENT_ID }}
-
-      - name: Deploy to Cloudflare
-        uses: cloudflare/wrangler-action@v3
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: deploy

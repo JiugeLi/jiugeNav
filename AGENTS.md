@@ -8,7 +8,8 @@
 - D1 库：`jiugenav`（`54340279-33f5-4f57-98db-c70316233a49`），`migrations_dir = drizzle`，**库名/库 ID 不要改**，改了要重新导入数据。
 - 构建部署：`npm run build`（`nuxt build`，Nitro `cloudflare_module` 预设）+ `npm run deploy`（含 wrangler deploy）。产物在 `.output/`。
 - 本地开发：`npm run db:migrate:local` 后 `npm run dev`。`nitro-cloudflare-dev` 会把 `wrangler.toml` 的 D1 绑定注入 `nuxt dev`，因此**不要写本地 mock 分支**。
-- GitHub Actions `deploy.yml` 在 push `main` 时构建部署，Google Client ID 通过 secret `NUXT_PUBLIC_GOOGLE_CLIENT_ID` 注入。
+- GitHub Actions `deploy.yml` 在 push `main` 时只做 typecheck + build 校验（仓库没配 Cloudflare API Token，CI 不能部署）；上线用本机 `npm run deploy`。
+- `npm ci` 在 Linux 上会因为 Windows 生成的 lockfile 可选依赖不一致而失败，CI 固定用 `npm install`。
 
 ## 接口约定
 

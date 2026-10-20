@@ -44,7 +44,8 @@ npm run deploy             # nuxt build + wrangler deploy
 - 生产 Worker：`cloud-nav`，域名 `nav.jiuge.ai`，D1 库 `jiugenav`
 - 数据库迁移：`npm run db:migrate:prod`（等价 `wrangler d1 migrations apply jiugenav --remote`）
 - Google 登录：配置 `NUXT_PUBLIC_GOOGLE_CLIENT_ID`（`wrangler.toml` 的 `[vars]` 或 GitHub Secrets）
-- CI：`.github/workflows/deploy.yml`，push `main` 自动构建部署
+- CI：`.github/workflows/deploy.yml`，push `main` 跑 typecheck + build 校验；
+  部署目前在本机执行（CI 里要部署需自行配置 `CLOUDFLARE_API_TOKEN` / `CLOUDFLARE_ACCOUNT_ID` 并加回 wrangler 步骤）
 
 ## 目录结构
 
