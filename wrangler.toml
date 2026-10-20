@@ -1,8 +1,10 @@
 name = "cloud-nav"
-compatibility_date = "2024-09-23"
+compatibility_date = "2025-01-01"
 compatibility_flags = ["nodejs_compat"]
-main = ".open-next/worker.js"
-assets = { directory = ".open-next/assets", binding = "ASSETS" }
+
+# Nuxt (Nitro) 构建产物
+main = ".output/server/index.mjs"
+assets = { directory = ".output/public", binding = "ASSETS" }
 
 routes = [
   { pattern = "nav.jiuge.ai", custom_domain = true }

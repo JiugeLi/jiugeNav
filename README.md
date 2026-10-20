@@ -1,164 +1,98 @@
-# jiugeNav
+# SoloLink
 
-一个现代化的个人网站导航管理系统，基于 Next.js 14 和 Cloudflare D1 构建，可部署在 Cloudflare Workers 上实现全球低延迟访问。
+可自定义分组与图标、带点击统计和链接体检的个人书签导航。部署在 **Cloudflare Workers**，数据存 **Cloudflare D1**。
 
-## ✨ 特性
+线上：<https://nav.jiuge.ai>
 
-- 📁 分组管理 - 创建、编辑、删除网站分组，支持自定义 Emoji 图标
-- 🌐 网站管理 - 添加、编辑、删除网站链接
-- 🤖 AI 智能分析 - 使用 Cloudflare Workers AI 自动识别网站信息
-- 🎨 自动获取 Logo - 自动抓取网站图标
-- 🔍 智能搜索 - 按名称、URL、描述搜索网站
-- 🔐 简单认证 - 密码保护的管理功能
-- 📊 点击统计 - 记录网站访问次数
-- 📤 数据导入/导出 - 支持数据备份和迁移
-- 📱 响应式设计 - 完美支持移动端和桌面端
+## 技术栈
 
-## 🚀 技术栈
+| 层 | 选型 |
+| --- | --- |
+| 框架 | Nuxt 4（Vue 3，`ssr: false` 纯客户端渲染） |
+| 服务端 | Nitro（`cloudflare_module` 预设）→ Cloudflare Workers |
+| 数据库 | Cloudflare D1 + Drizzle ORM（`drizzle/` 迁移） |
+| 样式 | Tailwind CSS（`@nuxtjs/tailwindcss`） |
+| 图标 | lucide-vue-next |
 
-- Next.js 14 (App Router) + React 18
-- Cloudflare D1 (SQLite) + Drizzle ORM
-- Cloudflare Workers AI (GPT-OSS 120B)
-- Tailwind CSS + Lucide React
-- OpenNext for Cloudflare Workers
+## 功能
 
-## 📦 快速开始
+- 分组与网站增删改查，图标可选 emoji，网站图标自动抓取
+- 「智能识别」：输入网址后抓取标题 / 描述 / favicon
+- 点击统计：总链接、总点击、本周点击、本周新增
+- 链接体检：分批并发检测失效链接，可批量清理
+- 数据导出 / 导入（JSON 备份，支持 merge / replace）
+- 登录：管理员密码（默认 `admin123`）+ 可选 Google 登录
+- 管理后台 `/admin`：用户、链接、点击量总览与用户删除
 
-### 1. 克隆并安装
+## 本地开发
 
 ```bash
-git clone <your-repo-url>
-cd jiugenav
 npm install
+npm run db:migrate:local   # 初始化本地 D1（wrangler 本地库）
+npm run dev                # http://localhost:3000
 ```
 
-### 2. 配置数据库
+`nitro-cloudflare-dev` 会把 `wrangler.toml` 里的 D1 绑定注入 `nuxt dev`，
+所以本地直接读写真实结构与 D1 API，没有 mock 分支。
+
+## 部署
 
 ```bash
-# 创建 Cloudflare D1 数据库
-wrangler d1 create jiugenav
-
-# 将返回的 database_id 更新到 wrangler.toml 中
+npm run deploy             # nuxt build + wrangler deploy
 ```
 
-编辑 `wrangler.toml`，更新 `database_id`：
-```toml
-[[d1_databases]]
-binding = "DB"
-database_name = "jiugenav"
-database_id = "your-database-id-here"  # 替换为你的数据库 ID
-migrations_dir = "drizzle"
-```
+- 生产 Worker：`cloud-nav`，域名 `nav.jiuge.ai`，D1 库 `jiugenav`
+- 数据库迁移：`npm run db:migrate:prod`（等价 `wrangler d1 migrations apply jiugenav --remote`）
+- Google 登录：配置 `NUXT_PUBLIC_GOOGLE_CLIENT_ID`（`wrangler.toml` 的 `[vars]` 或 GitHub Secrets）
+- CI：`.github/workflows/deploy.yml`，push `main` 自动构建部署
 
-### 3. 初始化数据库
-
-```bash
-npm run db:migrate:local
-```
-
-### 4. 启动开发服务器
-
-**方式一：使用本地数据库（快速开发）**
-```bash
-npm run dev
-# 访问 http://localhost:3000
-```
-
-**方式二：使用远程数据库（推荐）**
-```bash
-# 1. 构建项目
-npm run build:worker
-
-# 2. 启动开发服务器（连接远程数据库）
-npx wrangler dev .open-next/worker.js
-# 访问 http://localhost:8787
-```
-
-默认管理员密码：`admin123`
-
-**修改密码**：如需修改，可通过环境变量设置：
-```bash
-# 生产环境
-wrangler secret put ADMIN_PASSWORD
-```
-
-## 🌐 部署到 Cloudflare
-
-详细部署说明请查看 [docs/DEPLOY.md](docs/DEPLOY.md)
-
-**快速部署：**
-
-```bash
-# 1. 生产数据库迁移
-npm run db:migrate:prod
-
-# 2. 设置生产环境密码（可选，默认为 admin123）
-wrangler secret put ADMIN_PASSWORD
-
-# 3. 构建并部署
-npm run build:worker
-npm run deploy
-```
-
-**自动部署：**
-
-推送到 GitHub 后，Cloudflare Pages 会自动检测并部署。确保在 Cloudflare Dashboard 中配置了：
-- 连接 GitHub 仓库
-- 构建命令：`npm run build:worker`
-- 输出目录：`.open-next`
-- 环境变量：`ADMIN_PASSWORD`（可选）
-
-## 🔧 可用脚本
-
-| 命令 | 说明 |
-|------|------|
-| `npm run dev` | 启动开发服务器（使用本地数据库） |
-| `npm run dev:remote` | 启动开发服务器（使用远程数据库） |
-| `npm run build` | 构建 Next.js |
-| `npm run build:worker` | 构建 Cloudflare Worker |
-| `npm run preview` | 本地预览 Worker |
-| `npm run deploy` | 部署到 Cloudflare |
-| `npm run db:migrate:local` | 本地数据库迁移 |
-| `npm run db:migrate:prod` | 生产数据库迁移 |
-
-## 📁 项目结构
+## 目录结构
 
 ```
-src/
-├── app/
-│   ├── api/              # API 路由（groups, websites, health）
-│   └── page.tsx          # 主页
-├── components/           # React 组件
-├── db/                   # 数据库配置和 Schema
-├── lib/                  # 工具库（auth, utils）
-└── types/               # TypeScript 类型
+app/
+  pages/index.vue        导航主页（分组、搜索、统计、卡片）
+  pages/admin.vue        管理后台
+  components/            弹窗、卡片等组件
+  composables/useStore.ts 全局数据与操作
+  utils/                 api 请求封装、会话、类型
+server/
+  api/                   REST 接口（见下）
+  db/schema.ts           Drizzle 表结构
+  utils/                 db / 鉴权 / 错误响应
+drizzle/                 SQL 迁移（D1 唯一事实来源）
 ```
 
-## 🔒 安全说明
+## API
 
-- 默认管理员密码为 `admin123`，可通过 Cloudflare 环境变量修改
-- `wrangler.toml` 中的 `database_id` 可以公开，需要 Cloudflare 账号权限才能访问数据库
-- 生产环境建议修改默认密码：`wrangler secret put ADMIN_PASSWORD`
-- Workers AI 无需 API Key，完全免费使用
+所有接口都从请求头 `X-User-Id` 取当前用户（密码登录固定为 1 号管理员）。
 
-## 🤖 AI 功能
+| 方法 | 路径 | 说明 |
+| --- | --- | --- |
+| GET | `/api/health` | 服务与 D1 连通性 |
+| GET | `/api/stats` | 当前用户统计 |
+| GET/POST | `/api/groups` | 分组列表 / 新建 |
+| PUT/DELETE | `/api/groups/:id` | 修改 / 删除分组 |
+| GET | `/api/groups/export` | 导出备份 |
+| POST | `/api/groups/import` | 导入备份（`mode: merge \| replace`） |
+| GET/POST | `/api/websites` | 网站列表 / 新建 |
+| GET/PUT/DELETE | `/api/websites/:id` | 详情 / 修改 / 删除 |
+| POST | `/api/websites/:id/click` | 记录点击 |
+| POST | `/api/websites/analyze` | 抓取标题/描述/图标 |
+| GET | `/api/websites/check?batch=n` | 分批体检 |
+| DELETE | `/api/websites/check?ids=1,2` | 批量删除失效链接 |
+| POST | `/api/auth/verify` | 管理员密码校验 |
+| POST | `/api/auth/change-password` | 修改管理员密码 |
+| POST | `/api/auth/google` | Google 登录 |
+| GET | `/api/admin/stats` \| `/api/admin/users` | 管理后台数据 |
+| DELETE | `/api/admin/users?id=1` | 删除用户 |
 
-项目集成了 Cloudflare Workers AI，使用 `@cf/openai/gpt-oss-120b` 模型：
-- ✅ 完全免费，无需 API Key
-- ✅ 自动识别网站名称、描述和分类
-- ✅ 智能推荐分组
-- ✅ 边缘计算，响应快速
+> DELETE 接口一律用查询参数传 id，避免 Workers 上带 body 的 DELETE 读不到 `readBody`。
 
-详细说明请查看 [docs/AI_ARCHITECTURE.md](docs/AI_ARCHITECTURE.md)
+## 数据模型
 
-## 📚 文档
+`users` / `groups` / `websites` / `admin`，时间列统一存 **Unix 秒**。
+迁移历史与线上库漂移的坑（`websites.is_public` 缺失、`created_at` 文本时间）见 `AGENTS.md`。
 
-- [部署指南](docs/DEPLOY.md) - 详细的部署步骤
-- [AI 架构](docs/AI_ARCHITECTURE.md) - AI 功能实现原理
-- [项目结构](docs/PROJECT_STRUCTURE.md) - 代码组织说明
-- [贡献指南](docs/CONTRIBUTING.md) - 如何参与开发
-- [更新日志](docs/CHANGELOG.md) - 版本更新记录
+## License
 
-## 📝 许可证
-
-MIT License
+MIT
