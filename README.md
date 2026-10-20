@@ -2,7 +2,7 @@
 
 可自定义分组与图标、带点击统计和链接体检的个人书签导航。部署在 **Cloudflare Workers**，数据存 **Cloudflare D1**。
 
-线上：<https://nav.jiuge.ai>
+线上：<https://sololink.jiuge.ai>（旧域名 <https://nav.jiuge.ai> 保留为别名）
 
 ## 技术栈
 
@@ -41,8 +41,8 @@ npm run dev                # http://localhost:3000
 npm run deploy             # nuxt build + wrangler deploy
 ```
 
-- 生产 Worker：`cloud-nav`，域名 `nav.jiuge.ai`，D1 库 `jiugenav`
-- 数据库迁移：`npm run db:migrate:prod`（等价 `wrangler d1 migrations apply jiugenav --remote`）
+- 生产 Worker：`sololink`，域名 `sololink.jiuge.ai`（`nav.jiuge.ai` 为别名），D1 库 `sololink`
+- 数据库迁移：`npm run db:migrate:prod`（等价 `wrangler d1 migrations apply sololink --remote`）
 - Google 登录：配置 `NUXT_PUBLIC_GOOGLE_CLIENT_ID`（`wrangler.toml` 的 `[vars]` 或 GitHub Secrets）
 - CI：`.github/workflows/deploy.yml`，push `main` 跑 typecheck + build 校验；
   部署目前在本机执行（CI 里要部署需自行配置 `CLOUDFLARE_API_TOKEN` / `CLOUDFLARE_ACCOUNT_ID` 并加回 wrangler 步骤）

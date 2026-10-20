@@ -1,4 +1,4 @@
-name = "cloud-nav"
+name = "sololink"
 compatibility_date = "2025-01-01"
 compatibility_flags = ["nodejs_compat"]
 
@@ -7,7 +7,9 @@ main = ".output/server/index.mjs"
 assets = { directory = ".output/public", binding = "ASSETS" }
 
 routes = [
-  { pattern = "nav.jiuge.ai", custom_domain = true }
+  { pattern = "sololink.jiuge.ai", custom_domain = true },
+  # 旧域名保留为别名，避免已有书签失效
+  { pattern = "nav.jiuge.ai", custom_domain = true },
 ]
 
 [observability.logs]
@@ -17,6 +19,6 @@ invocation_logs = true
 
 [[d1_databases]]
 binding = "DB"
-database_name = "jiugenav"
-database_id = "54340279-33f5-4f57-98db-c70316233a49"
+database_name = "sololink"
+database_id = "fa6a11cf-06e4-4acb-a6f1-0b93eca38e31"
 migrations_dir = "drizzle"

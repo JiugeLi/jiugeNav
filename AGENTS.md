@@ -4,8 +4,9 @@
 
 ## 环境与部署
 
-- 生产 Worker：`cloud-nav`（名字沿用旧部署，避免自定义域名迁移），域名 `nav.jiuge.ai`。
-- D1 库：`jiugenav`（`54340279-33f5-4f57-98db-c70316233a49`），`migrations_dir = drizzle`，**库名/库 ID 不要改**，改了要重新导入数据。
+- 生产 Worker：`sololink`，域名 `sololink.jiuge.ai`（`nav.jiuge.ai` 同时绑定为别名，别再部署回旧名 `cloud-nav`）。
+- D1 库：`sololink`（`fa6a11cf-06e4-4acb-a6f1-0b93eca38e31`），`migrations_dir = drizzle`。旧库 `jiugenav` 已于 2026-10-20 迁移并删除，备份在 `/.backup/jiugenav-full-20261020-124744.sql`。
+- 仓库：`https://github.com/JiugeLi/sololink`（原 `jiugeNav`）。
 - 构建部署：`npm run build`（`nuxt build`，Nitro `cloudflare_module` 预设）+ `npm run deploy`（含 wrangler deploy）。产物在 `.output/`。
 - 本地开发：`npm run db:migrate:local` 后 `npm run dev`。`nitro-cloudflare-dev` 会把 `wrangler.toml` 的 D1 绑定注入 `nuxt dev`，因此**不要写本地 mock 分支**。
 - GitHub Actions `deploy.yml` 在 push `main` 时只做 typecheck + build 校验（仓库没配 Cloudflare API Token，CI 不能部署）；上线用本机 `npm run deploy`。
@@ -28,7 +29,7 @@
 
 ## 排查顺序
 
-1. `curl https://nav.jiuge.ai/api/health` 确认 Worker 与 D1 正常。
+1. `curl https://sololink.jiuge.ai/api/health` 确认 Worker 与 D1 正常。
 2. 比对线上表结构与 `server/db/schema.ts`：
-   `npx wrangler d1 execute jiugenav --remote --command "SELECT sql FROM sqlite_master WHERE name='websites'"`。
-3. 仍无头绪就 `npx wrangler tail cloud-nav --format json` 复现一次，直接看 `console.error('[SCOPE]', error)` 的原文。
+   `npx wrangler d1 execute sololink --remote --command "SELECT sql FROM sqlite_master WHERE name='websites'"`。
+3. 仍无头绪就 `npx wrangler tail sololink --format json` 复现一次，直接看 `console.error('[SCOPE]', error)` 的原文。
