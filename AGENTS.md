@@ -7,6 +7,7 @@
 - 生产 Worker：`sololink`，域名 `sololink.jiuge.ai`（`nav.jiuge.ai` 同时绑定为别名，别再部署回旧名 `cloud-nav`）。
 - D1 库：`sololink`（`fa6a11cf-06e4-4acb-a6f1-0b93eca38e31`），`migrations_dir = drizzle`。旧库 `jiugenav` 已于 2026-10-20 迁移并删除，备份在 `/.backup/jiugenav-full-20261020-124744.sql`。
 - 仓库：`https://github.com/JiugeLi/sololink`（原 `jiugeNav`）。
+- 本地 D1 与线上库相互独立：`npm run db:migrate:local` 只建空库（同一个 D1 名 `sololink`，miniflare 存在 `.wrangler/state`），本地看不到线上数据是正常的。
 - 构建部署：`npm run build`（`nuxt build`，Nitro `cloudflare_module` 预设）+ `npm run deploy`（含 wrangler deploy）。产物在 `.output/`。
 - 本地开发：`npm run db:migrate:local` 后 `npm run dev`。`nitro-cloudflare-dev` 会把 `wrangler.toml` 的 D1 绑定注入 `nuxt dev`，因此**不要写本地 mock 分支**。
 - GitHub Actions `deploy.yml` 在 push `main` 时只做 typecheck + build 校验（仓库没配 Cloudflare API Token，CI 不能部署）；上线用本机 `npm run deploy`。

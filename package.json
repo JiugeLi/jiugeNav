@@ -11,8 +11,8 @@
     "postinstall": "nuxt prepare",
     "typecheck": "nuxt typecheck",
     "db:generate": "drizzle-kit generate:sqlite",
-    "db:migrate:local": "wrangler d1 migrations apply jiugenav --local",
-    "db:migrate:prod": "wrangler d1 migrations apply jiugenav --remote"
+    "db:migrate:local": "wrangler d1 migrations apply sololink --local",
+    "db:migrate:prod": "wrangler d1 migrations apply sololink --remote"
   },
   "dependencies": {
     "drizzle-orm": "^0.45.4",
