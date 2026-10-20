@@ -19,7 +19,8 @@ jobs:
           cache: 'npm'
 
       - name: Install dependencies
-        run: npm ci
+        # 用 install 而不是 ci：Windows 上生成的 lock 与 Linux 可选依赖解析不完全一致
+        run: npm install --no-audit --no-fund
 
       - name: Build (Nuxt / Nitro → Cloudflare Workers)
         run: npm run build
