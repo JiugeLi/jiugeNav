@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue';
-import { Loader2, Lock } from 'lucide-vue-next';
+import { Loader2, Lock, Sparkles } from 'lucide-vue-next';
 import Modal from './Modal.vue';
 import { apiPost } from '~/utils/api';
 import { useStore } from '~/composables/useStore';
@@ -87,47 +87,51 @@ async function submitPassword() {
 
 <template>
   <Modal :open="open" width="max-w-sm" @close="emit('close')">
-    <template #title>登录 SoloLink</template>
+    <template #title><Sparkles :size="18" class="text-sakura-500" />欢迎回来</template>
 
-    <div class="p-6 space-y-6">
-      <div v-if="googleClientId">
-        <div class="text-sm text-slate-600 mb-3 text-center">使用 Google 账号登录</div>
-        <div id="gsi-button" class="flex justify-center" />
-        <p v-if="!googleReady" class="text-xs text-center text-slate-400">正在加载 Google 登录…</p>
+    <div class="p-6 space-y-5">
+      <div class="text-center space-y-1 pb-1">
+        <div class="text-4xl animate-ac-float">🌸</div>
+        <p class="text-xs font-bold tracking-[0.2em] text-ink-mute">SOLOLINK · 私藏书签站</p>
       </div>
 
-      <div v-if="googleClientId" class="relative">
-        <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-slate-200" /></div>
-        <div class="relative flex justify-center text-sm">
-          <span class="px-2 bg-white text-slate-500">或使用管理员密码</span>
+      <div v-if="googleClientId">
+        <div class="text-xs font-bold text-ink-soft mb-3 text-center tracking-wider">使用 Google 账号登录</div>
+        <div id="gsi-button" class="flex justify-center" />
+        <p v-if="!googleReady" class="text-xs text-center text-ink-mute mt-2">正在加载 Google 登录…</p>
+      </div>
+
+      <div v-if="googleClientId" class="relative py-1">
+        <div class="absolute inset-0 flex items-center"><div class="ac-divider w-full" /></div>
+        <div class="relative flex justify-center">
+          <span class="px-3 bg-white text-[11px] font-bold tracking-wider text-ink-mute">或使用管理员密码</span>
         </div>
       </div>
 
       <form class="space-y-4" @submit.prevent="submitPassword">
         <div class="relative">
-          <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <Lock :size="18" class="text-slate-400" />
-          </div>
+          <Lock :size="16" class="absolute left-4 top-1/2 -translate-y-1/2 text-sakura-400 pointer-events-none" />
           <input
             v-model="password"
             type="password"
-            class="w-full pl-10 pr-4 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm"
+            class="ac-input pl-11"
             placeholder="请输入管理密码"
             autofocus
           >
         </div>
 
-        <div v-if="error" class="p-3 bg-red-50 border border-red-100 rounded-lg text-red-600 text-sm">{{ error }}</div>
+        <div v-if="error" class="p-3 rounded-2xl bg-[#fff1f4] border-2 border-[#ffd9e2] text-[#e0405f] text-sm font-semibold text-center">
+          {{ error }}
+        </div>
 
-        <button
-          type="submit"
-          :disabled="loading || !password"
-          class="w-full py-2.5 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-        >
+        <button type="submit" :disabled="loading || !password" class="ac-btn ac-btn-primary w-full py-3 text-sm">
           <Loader2 v-if="loading" :size="16" class="animate-spin" />
+          <Sparkles v-else :size="16" />
           登录
         </button>
       </form>
+
+      <p class="text-[11px] text-center font-semibold text-ink-mute">✧ 密码仅存在服务端，放心使用 ✧</p>
     </div>
   </Modal>
 </template>

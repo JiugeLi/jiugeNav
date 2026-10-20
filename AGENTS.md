@@ -19,6 +19,7 @@
 - 服务端统一用 `server/utils/http.ts` 的 `requireDb` / `requireUserId` / `fail` / `serverError`，错误响应体是 Nitro 标准结构 + `data.error`，前端 `app/utils/api.ts` 按此解析。
 - **DELETE 一律用查询参数传 id**（Workers 上带 body 的 DELETE，`readBody` 会拿到 undefined 并让请求挂起）。
 - 前端不 SSR（`ssr: false`），数据只在客户端登录后加载，页面内容不需要服务端渲染。
+- **`nuxt.config.ts` 必须显式写 `tailwindcss.cssPath: '~/assets/css/tailwind.css'`**：Nuxt 4 的 `srcDir` 是 `app/`，`@nuxtjs/tailwindcss` 默认入口找不到自定义 CSS 时会静默用空文件，构建成功但构建产物里没有任何 `ac-*` 类，线上整站退化成裸样式（排查方法：`grep -c ac-card .output/public/_nuxt/entry.*.css`，正常为 1）。
 
 ## D1 / Drizzle 约束（踩过坑，勿改回）
 

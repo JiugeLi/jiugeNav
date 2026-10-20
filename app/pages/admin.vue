@@ -79,103 +79,111 @@ async function signOut() {
 }
 
 const cards = computed(() => [
-  { label: '总用户数', value: stats.value.totalUsers, extra: `+${stats.value.newUsersThisWeek} 本周新增`, icon: Users, color: 'from-blue-500 to-blue-600' },
-  { label: '总链接数', value: stats.value.totalLinks, extra: `+${stats.value.newLinksThisWeek} 本周新增`, icon: Link2, color: 'from-emerald-500 to-emerald-600' },
-  { label: '总分组数', value: stats.value.totalGroups, extra: '', icon: FolderOpen, color: 'from-violet-500 to-violet-600' },
-  { label: '总点击量', value: stats.value.totalClicks, extra: '', icon: MousePointerClick, color: 'from-amber-500 to-orange-500' },
+  { label: '总用户数', value: stats.value.totalUsers, extra: `+${stats.value.newUsersThisWeek} 本周新增`, icon: Users, emoji: '👤', bg: 'linear-gradient(135deg, #ffb3d3 0%, #ff7fb4 55%, #ff9ecb 100%)', ring: '#ffd9ea' },
+  { label: '总链接数', value: stats.value.totalLinks, extra: `+${stats.value.newLinksThisWeek} 本周新增`, icon: Link2, emoji: '🔗', bg: 'linear-gradient(135deg, #9bf2dd 0%, #5fe0be 55%, #67d6ff 100%)', ring: '#c9fbef' },
+  { label: '总分组数', value: stats.value.totalGroups, extra: '', icon: FolderOpen, emoji: '📁', bg: 'linear-gradient(135deg, #d3c2ff 0%, #a88cff 55%, #c9a6ff 100%)', ring: '#e6dcff' },
+  { label: '总点击量', value: stats.value.totalClicks, extra: '', icon: MousePointerClick, emoji: '💖', bg: 'linear-gradient(135deg, #ffe3ac 0%, #ffc46b 55%, #ffb0a0 100%)', ring: '#fff0d2' },
 ]);
 </script>
 
 <template>
-  <div class="min-h-screen bg-slate-50">
-    <header class="bg-white border-b border-slate-200 sticky top-0 z-10">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
-        <div class="flex items-center gap-4">
-          <NuxtLink to="/" class="p-2 hover:bg-slate-100 rounded-lg transition-colors">
-            <ArrowLeft :size="20" class="text-slate-600" />
+  <div class="min-h-screen relative text-ink font-rounded">
+    <AnimeBackdrop />
+
+    <header class="sticky top-0 z-10 ac-glass border-b-2 border-white/80">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex items-center justify-between gap-3">
+        <div class="flex items-center gap-3 min-w-0">
+          <NuxtLink to="/" class="w-9 h-9 rounded-full bg-white border-2 border-sakura-100 flex items-center justify-center text-ink-soft hover:text-sakura-600 hover:border-sakura-300 transition-colors shrink-0">
+            <ArrowLeft :size="17" />
           </NuxtLink>
-          <h1 class="text-2xl font-bold text-slate-900">SoloLink 管理后台</h1>
+          <h1 class="text-lg sm:text-xl font-extrabold truncate flex items-center gap-2">
+            <span class="ac-gradient-text">SoloLink</span>
+            <span class="ac-chip">✧ 管理后台</span>
+          </h1>
         </div>
-        <button class="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg transition-colors" @click="signOut">
+        <button class="ac-btn ac-btn-ghost px-3.5 py-2 text-xs shrink-0" @click="signOut">
           退出登录
         </button>
       </div>
     </header>
 
-    <div v-if="loading" class="flex items-center justify-center py-32">
-      <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600" />
+    <div v-if="loading" class="flex flex-col items-center justify-center py-32 gap-4 relative z-10">
+      <div class="w-12 h-12 rounded-full border-4 border-sakura-100 border-t-sakura-400 animate-spin" />
+      <p class="text-sm font-bold text-ink-soft animate-ac-float">读取数据中 ✧</p>
     </div>
 
-    <div v-else class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
-      <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+    <div v-else class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6 relative z-10">
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <div
           v-for="card in cards"
           :key="card.label"
-          class="bg-gradient-to-br rounded-2xl p-6 text-white shadow-lg"
-          :class="card.color"
+          class="relative overflow-hidden rounded-3xl p-5 text-white border-2 border-white/70 transition-transform duration-300 hover:-translate-y-1 hover:scale-[1.02]"
+          :style="{ backgroundImage: card.bg, boxShadow: `0 6px 0 -1px ${card.ring}, 0 22px 34px -24px rgba(120, 84, 168, 0.75)` }"
         >
-          <div class="flex items-center justify-between">
+          <div class="absolute inset-0 opacity-40" style="background-image: radial-gradient(rgba(255, 255, 255, 0.95) 1px, transparent 1px); background-size: 14px 14px" />
+          <span class="absolute -right-1 -bottom-3 text-5xl opacity-20 select-none">{{ card.emoji }}</span>
+          <div class="relative flex items-start justify-between gap-2">
             <div>
-              <p class="text-white/80 text-sm font-medium">{{ card.label }}</p>
-              <p class="text-3xl font-bold mt-2">{{ card.value }}</p>
-              <p v-if="card.extra" class="text-white/70 text-xs mt-1">{{ card.extra }}</p>
+              <p class="text-white/85 text-xs font-bold tracking-wider">{{ card.label }}</p>
+              <p class="text-3xl font-extrabold mt-1 leading-none" style="text-shadow: 0 2px 0 rgba(120, 40, 80, 0.18)">{{ card.value }}</p>
+              <p v-if="card.extra" class="text-white/75 text-[11px] font-bold mt-1.5">{{ card.extra }}</p>
             </div>
-            <component :is="card.icon" :size="32" class="opacity-80" />
+            <div class="w-10 h-10 rounded-2xl bg-white/30 border border-white/50 flex items-center justify-center shrink-0">
+              <component :is="card.icon" :size="19" />
+            </div>
           </div>
         </div>
       </div>
 
-      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-        <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
-          <h2 class="text-lg font-bold text-slate-900">用户列表</h2>
-          <button class="p-2 hover:bg-slate-100 rounded-lg transition-colors" title="刷新" @click="fetchData">
-            <RefreshCw :size="18" class="text-slate-600" />
+      <div class="ac-card overflow-hidden">
+        <div class="px-5 py-4 flex items-center justify-between bg-gradient-to-r from-sakura-50 to-lumi-50/60 border-b-2 border-sakura-100">
+          <h2 class="text-base font-extrabold text-ink flex items-center gap-2">
+            <span class="text-sakura-400">✦</span>用户列表
+          </h2>
+          <button class="w-8 h-8 rounded-full bg-white border-2 border-sakura-100 flex items-center justify-center text-ink-soft hover:text-sakura-600 hover:rotate-90 transition-all" title="刷新" @click="fetchData">
+            <RefreshCw :size="15" />
           </button>
         </div>
 
         <div class="overflow-x-auto">
           <table class="w-full">
-            <thead class="bg-slate-50">
+            <thead class="bg-sakura-50/50">
               <tr>
-                <th v-for="title in ['用户', '链接数', '分组数', '点击量', '注册时间', '最后登录', '操作']" :key="title" class="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase">
+                <th v-for="title in ['用户', '链接数', '分组数', '点击量', '注册时间', '最后登录', '操作']" :key="title" class="px-5 py-3 text-left text-[11px] font-extrabold tracking-widest text-ink-mute whitespace-nowrap">
                   {{ title }}
                 </th>
               </tr>
             </thead>
-            <tbody class="divide-y divide-slate-100">
-              <tr v-for="user in users" :key="user.id" class="hover:bg-slate-50">
-                <td class="px-6 py-4">
+            <tbody class="divide-y divide-sakura-50">
+              <tr v-for="user in users" :key="user.id" class="hover:bg-sakura-50/50 transition-colors">
+                <td class="px-5 py-3.5">
                   <div class="flex items-center gap-3">
-                    <img v-if="user.avatar" :src="user.avatar" alt="" class="w-10 h-10 rounded-full">
-                    <div v-else class="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-violet-500 flex items-center justify-center text-white font-bold">
+                    <img v-if="user.avatar" :src="user.avatar" alt="" class="w-10 h-10 rounded-2xl border-2 border-sakura-100">
+                    <div v-else class="w-10 h-10 rounded-2xl flex items-center justify-center text-white font-extrabold border-2 border-white/60 shrink-0" style="background-image: linear-gradient(135deg, #ffa6cc, #a88cff)">
                       {{ (user.name || user.email)[0]?.toUpperCase() }}
                     </div>
-                    <div>
-                      <div class="font-medium text-slate-900">{{ user.name || '未命名用户' }}</div>
-                      <div class="text-sm text-slate-500">{{ user.email }}</div>
+                    <div class="min-w-0">
+                      <div class="font-extrabold text-sm text-ink truncate">{{ user.name || '未命名用户' }}</div>
+                      <div class="text-[11px] font-semibold text-ink-mute truncate">{{ user.email }}</div>
                     </div>
                   </div>
                 </td>
-                <td class="px-6 py-4">
-                  <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                    <Link2 :size="12" />{{ user.linkCount }}
-                  </span>
+                <td class="px-5 py-3.5">
+                  <span class="ac-chip"><Link2 :size="11" />{{ user.linkCount }}</span>
                 </td>
-                <td class="px-6 py-4">
-                  <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-violet-100 text-violet-800">
-                    <FolderOpen :size="12" />{{ user.groupCount }}
-                  </span>
+                <td class="px-5 py-3.5">
+                  <span class="ac-chip" style="background: #f6f1ff; color: #7350d8; border-color: #e2d8ff"><FolderOpen :size="11" />{{ user.groupCount }}</span>
                 </td>
-                <td class="px-6 py-4 text-slate-900">{{ user.totalClicks }}</td>
-                <td class="px-6 py-4 text-slate-500 text-sm">
-                  <span class="flex items-center gap-1"><Calendar :size="14" />{{ formatDate(user.created_at) }}</span>
+                <td class="px-5 py-3.5 text-sm font-extrabold text-ink">{{ user.totalClicks }}</td>
+                <td class="px-5 py-3.5 text-xs font-semibold text-ink-soft whitespace-nowrap">
+                  <span class="flex items-center gap-1"><Calendar :size="13" class="text-sakura-300" />{{ formatDate(user.created_at) }}</span>
                 </td>
-                <td class="px-6 py-4 text-slate-500 text-sm">
-                  <span class="flex items-center gap-1"><Clock :size="14" />{{ formatDate(user.last_login) }}</span>
+                <td class="px-5 py-3.5 text-xs font-semibold text-ink-soft whitespace-nowrap">
+                  <span class="flex items-center gap-1"><Clock :size="13" class="text-sky-300" />{{ formatDate(user.last_login) }}</span>
                 </td>
-                <td class="px-6 py-4">
-                  <button class="p-2 hover:bg-red-50 text-red-600 rounded-lg transition-colors" title="删除用户" @click="removeUser(user.id, user.email)">
-                    <Trash2 :size="16" />
+                <td class="px-5 py-3.5">
+                  <button class="p-2 rounded-full text-ink-mute hover:text-red-500 hover:bg-red-50 transition-colors" title="删除用户" @click="removeUser(user.id, user.email)">
+                    <Trash2 :size="15" />
                   </button>
                 </td>
               </tr>
@@ -183,7 +191,7 @@ const cards = computed(() => [
           </table>
         </div>
 
-        <div v-if="users.length === 0" class="text-center py-12 text-slate-500">暂无用户</div>
+        <div v-if="users.length === 0" class="text-center py-12 text-sm font-bold text-ink-mute">暂无用户 (｡•́︿•̀｡)</div>
       </div>
     </div>
   </div>

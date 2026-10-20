@@ -128,17 +128,18 @@ function close() {
 
 <template>
   <Modal :open="props.open" width="max-w-3xl" @close="close">
-    <template #title><CheckCircle :size="20" class="text-blue-600" />链接检查器</template>
+    <template #title><CheckCircle :size="18" class="text-mint-500" />链接体检</template>
 
     <div class="p-6">
-      <div v-if="results.length === 0" class="text-center py-10">
-        <div class="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-6">
-          <CheckCircle class="text-slate-400" :size="40" />
+      <div v-if="results.length === 0" class="text-center py-8">
+        <div class="relative w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-6 bg-gradient-to-br from-mint-50 to-sky-50 border-2 border-dashed border-mint-200">
+          <CheckCircle class="text-mint-400" :size="40" />
+          <span class="absolute -top-1 -right-2 text-xl animate-ac-float">✨</span>
         </div>
-        <h3 class="text-lg font-semibold text-slate-900 mb-2">开始检查链接</h3>
-        <p class="text-slate-500 mb-6">检测 404、超时等异常情况，检查后可批量清理失效链接</p>
-        <button class="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white font-medium rounded-xl hover:bg-blue-700 transition-all shadow-md mx-auto" @click="startCheck">
-          <CheckCircle :size="18" />
+        <h3 class="text-lg font-extrabold text-ink mb-2">开始全站体检～</h3>
+        <p class="text-sm text-ink-soft mb-6 max-w-sm mx-auto leading-relaxed">检测 404、超时等异常情况，检查后可批量清理失效链接</p>
+        <button class="ac-btn ac-btn-mint px-6 py-3 text-sm mx-auto" @click="startCheck">
+          <CheckCircle :size="17" />
           开始检查
         </button>
       </div>
@@ -146,73 +147,73 @@ function close() {
       <div v-else class="space-y-5">
         <div v-if="checking">
           <div class="flex items-center justify-between mb-2 text-sm">
-            <span class="font-medium text-slate-700">正在检查... ({{ checkedCount }}/{{ total }})</span>
-            <span class="font-medium text-blue-600">{{ progress }}%</span>
+            <span class="font-bold text-ink">正在检查… ({{ checkedCount }}/{{ total }})</span>
+            <span class="font-extrabold text-sakura-600">{{ progress }}%</span>
           </div>
-          <div class="w-full bg-slate-200 rounded-full h-2 overflow-hidden">
-            <div class="bg-blue-600 h-2 transition-all duration-300" :style="{ width: `${progress}%` }" />
-          </div>
-        </div>
-
-        <div class="grid grid-cols-4 gap-3">
-          <div class="rounded-xl p-3 text-center bg-slate-50">
-            <div class="text-xl font-bold text-slate-900">{{ results.length }}</div>
-            <div class="text-xs text-slate-500">总链接数</div>
-          </div>
-          <div class="rounded-xl p-3 text-center bg-green-50">
-            <div class="text-xl font-bold text-green-600">{{ okCount }}</div>
-            <div class="text-xs text-slate-500">正常链接</div>
-          </div>
-          <div class="rounded-xl p-3 text-center bg-red-50">
-            <div class="text-xl font-bold text-red-600">{{ badLinks.length }}</div>
-            <div class="text-xs text-slate-500">失效链接</div>
-          </div>
-          <div class="rounded-xl p-3 text-center bg-blue-50">
-            <div class="text-xl font-bold text-blue-600">{{ pendingCount }}</div>
-            <div class="text-xs text-slate-500">待检查</div>
+          <div class="w-full rounded-full h-3 overflow-hidden border-2 border-sakura-100 bg-sakura-50">
+            <div class="h-full rounded-full transition-all duration-300" style="background-image: linear-gradient(90deg, #ffb3d3, #ff7fb4 50%, #a88cff)" :style="{ width: `${progress}%` }" />
           </div>
         </div>
 
-        <div v-if="!checking && badLinks.length > 0" class="flex items-center justify-between bg-slate-50 rounded-xl p-3">
-          <span class="text-sm text-slate-600">
-            已选择 <span class="font-bold text-red-600">{{ selectedIds.size }}</span> 个链接待删除
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+          <div class="rounded-2xl p-3 text-center bg-white border-2 border-sakura-100" style="box-shadow: 0 3px 0 #ffeef6">
+            <div class="text-xl font-extrabold text-ink">{{ results.length }}</div>
+            <div class="text-[11px] font-bold text-ink-mute">总链接数</div>
+          </div>
+          <div class="rounded-2xl p-3 text-center bg-white border-2 border-mint-100" style="box-shadow: 0 3px 0 #eafbf5">
+            <div class="text-xl font-extrabold text-mint-600">{{ okCount }}</div>
+            <div class="text-[11px] font-bold text-ink-mute">正常链接</div>
+          </div>
+          <div class="rounded-2xl p-3 text-center bg-white border-2 border-[#ffd9e2]" style="box-shadow: 0 3px 0 #ffe7ec">
+            <div class="text-xl font-extrabold text-[#e0405f]">{{ badLinks.length }}</div>
+            <div class="text-[11px] font-bold text-ink-mute">失效链接</div>
+          </div>
+          <div class="rounded-2xl p-3 text-center bg-white border-2 border-sky-100" style="box-shadow: 0 3px 0 #eaf6ff">
+            <div class="text-xl font-extrabold text-sky-600">{{ pendingCount }}</div>
+            <div class="text-[11px] font-bold text-ink-mute">待检查</div>
+          </div>
+        </div>
+
+        <div v-if="!checking && badLinks.length > 0" class="flex items-center justify-between gap-2 bg-sakura-50/70 rounded-2xl p-3 border-2 border-sakura-100">
+          <span class="text-sm font-semibold text-ink-soft">
+            已选择 <span class="font-extrabold text-[#e0405f]">{{ selectedIds.size }}</span> 个链接待删除
           </span>
-          <div class="flex gap-2">
-            <button class="px-3 py-1.5 text-xs font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors" @click="selectedIds = new Set(badLinks.map((r) => r.id))">
-              全选失效链接
+          <div class="flex gap-2 shrink-0">
+            <button class="ac-btn ac-btn-ghost px-3 py-1.5 text-xs" @click="selectedIds = new Set(badLinks.map((r) => r.id))">
+              全选失效
             </button>
-            <button class="px-3 py-1.5 text-xs font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors" @click="selectedIds = new Set()">
+            <button class="ac-btn ac-btn-ghost px-3 py-1.5 text-xs" @click="selectedIds = new Set()">
               取消全选
             </button>
           </div>
         </div>
 
-        <div class="space-y-2 max-h-80 overflow-y-auto custom-scrollbar">
+        <div class="space-y-2 max-h-80 overflow-y-auto custom-scrollbar pr-1">
           <div
             v-for="link in results"
             :key="link.id"
-            class="rounded-xl p-3 flex items-start gap-3 border"
-            :class="link.status === 'checking' ? 'bg-blue-50 border-blue-100'
-              : link.status === 'ok' ? 'bg-green-50 border-green-100'
-              : selectedIds.has(link.id) ? 'bg-red-100 border-red-300' : 'bg-red-50 border-red-100'"
+            class="rounded-2xl p-3 flex items-start gap-3 border-2 transition-colors"
+            :class="link.status === 'checking' ? 'bg-sky-50 border-sky-100'
+              : link.status === 'ok' ? 'bg-mint-50 border-mint-100'
+              : selectedIds.has(link.id) ? 'bg-[#ffe7ec] border-[#ffb8c8]' : 'bg-[#fff5f7] border-[#ffd9e2]'"
           >
-            <button v-if="isBad(link) && !checking" class="flex-shrink-0 mt-0.5" @click="toggle(link.id)">
-              <CheckSquare v-if="selectedIds.has(link.id)" class="text-red-600" :size="20" />
-              <Square v-else class="text-slate-400" :size="20" />
+            <button v-if="isBad(link) && !checking" class="shrink-0 mt-0.5" @click="toggle(link.id)">
+              <CheckSquare v-if="selectedIds.has(link.id)" class="text-[#e0405f]" :size="19" />
+              <Square v-else class="text-ink-mute" :size="19" />
             </button>
 
-            <Loader2 v-if="link.status === 'checking'" class="text-blue-500 animate-spin" :size="20" />
-            <CheckCircle v-else-if="link.status === 'ok'" class="text-green-500" :size="20" />
-            <AlertCircle v-else-if="link.status === 'timeout'" class="text-orange-500" :size="20" />
-            <XCircle v-else class="text-red-500" :size="20" />
+            <Loader2 v-if="link.status === 'checking'" class="text-sky-500 animate-spin shrink-0" :size="19" />
+            <CheckCircle v-else-if="link.status === 'ok'" class="text-mint-500 shrink-0" :size="19" />
+            <AlertCircle v-else-if="link.status === 'timeout'" class="text-sun-500 shrink-0" :size="19" />
+            <XCircle v-else class="text-[#e0405f] shrink-0" :size="19" />
 
             <div class="flex-1 min-w-0">
-              <div class="font-medium text-slate-900 truncate">{{ link.name }}</div>
-              <div class="text-sm text-slate-500 truncate">{{ link.url }}</div>
-              <span v-if="link.status === 'checking'" class="text-blue-600 text-xs">检查中...</span>
-              <span v-else-if="link.status === 'ok'" class="text-green-600 text-xs">正常 ({{ link.statusCode }})</span>
-              <span v-else-if="link.status === 'timeout'" class="text-orange-600 text-xs">超时</span>
-              <span v-else class="text-red-600 text-xs">错误 ({{ link.statusCode || link.error }})</span>
+              <div class="font-extrabold text-sm text-ink truncate">{{ link.name }}</div>
+              <div class="text-xs font-semibold text-ink-mute truncate">{{ link.url }}</div>
+              <span v-if="link.status === 'checking'" class="text-[11px] font-bold text-sky-600">检查中…</span>
+              <span v-else-if="link.status === 'ok'" class="text-[11px] font-bold text-mint-600">正常 ({{ link.statusCode }})</span>
+              <span v-else-if="link.status === 'timeout'" class="text-[11px] font-bold text-sun-600">超时</span>
+              <span v-else class="text-[11px] font-bold text-[#e0405f]">错误 ({{ link.statusCode || link.error }})</span>
             </div>
           </div>
         </div>
@@ -220,22 +221,22 @@ function close() {
     </div>
 
     <template v-if="results.length > 0" #footer>
-      <button v-if="checking" class="px-4 py-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors mr-auto" @click="stopCheck">
+      <button v-if="checking" class="ac-btn ac-btn-danger px-4 py-2 text-xs mr-auto" @click="stopCheck">
         停止检查
       </button>
-      <button v-else class="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg transition-colors mr-auto" @click="startCheck">
+      <button v-else class="ac-btn ac-btn-ghost px-4 py-2 text-xs mr-auto" @click="startCheck">
         重新检查
       </button>
 
       <button
         v-if="selectedIds.size > 0 && !checking"
         :disabled="deleting"
-        class="flex items-center gap-2 px-4 py-2 bg-red-600 text-white font-medium rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50"
+        class="ac-btn ac-btn-danger-solid px-4 py-2 text-xs"
         @click="deleteSelected"
       >
-        <Loader2 v-if="deleting" class="animate-spin" :size="18" />
-        <Trash2 v-else :size="18" />
-        删除选中的 {{ selectedIds.size }} 个链接
+        <Loader2 v-if="deleting" class="animate-spin" :size="15" />
+        <Trash2 v-else :size="15" />
+        删除选中的 {{ selectedIds.size }} 个
       </button>
     </template>
   </Modal>

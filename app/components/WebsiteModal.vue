@@ -56,23 +56,22 @@ function submit() {
 <template>
   <Modal :open="open" width="max-w-lg" @close="emit('close')">
     <template #title>
-      <Globe v-if="initial" :size="20" class="text-blue-500" />
-      <Sparkles v-else :size="20" class="text-blue-500" />
-      {{ initial ? '编辑网站' : '添加网站' }}
+      <Sparkles :size="18" class="text-sakura-500" />
+      {{ initial ? '✎ 编辑网站' : '✿ 添加网站' }}
     </template>
 
     <form class="p-6 space-y-5" @submit.prevent="submit">
       <div>
-        <label class="block text-sm font-semibold text-slate-700 mb-2 flex items-center gap-2">
-          <LinkIcon :size="16" class="text-slate-400" />
+        <label class="ac-label">
+          <LinkIcon :size="14" />
           网址
-          <span class="text-slate-400 font-normal text-xs ml-auto">输入网址可自动识别</span>
+          <span class="ml-auto normal-case tracking-normal font-semibold text-[11px] text-ink-mute">输入后自动识别</span>
         </label>
         <div class="flex gap-2">
           <input
             v-model="form.url"
             type="text"
-            class="flex-1 px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm placeholder:text-slate-400"
+            class="ac-input flex-1"
             placeholder="example.com"
             required
             @blur="onUrlBlur"
@@ -80,81 +79,55 @@ function submit() {
           <button
             type="button"
             :disabled="analyzing || !form.url"
-            class="px-4 py-2 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-xl transition-colors disabled:opacity-50 flex items-center gap-2 text-sm font-medium whitespace-nowrap"
+            class="ac-btn ac-btn-lumi px-4 py-2 text-sm shrink-0"
             @click="analyze"
           >
-            <Loader2 v-if="analyzing" :size="18" class="animate-spin" />
-            <template v-else><Sparkles :size="16" />智能识别</template>
+            <Loader2 v-if="analyzing" :size="16" class="animate-spin" />
+            <template v-else><Sparkles :size="15" />识别</template>
           </button>
         </div>
       </div>
 
       <div>
-        <label class="block text-sm font-semibold text-slate-700 mb-2 flex items-center gap-2">
-          <FolderOpen :size="16" class="text-slate-400" />
-          分组
-        </label>
-        <select
-          v-model.number="form.group_id"
-          class="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm bg-white"
-        >
-          <option v-for="group in groups" :key="group.id" :value="group.id">{{ group.name }}</option>
+        <label class="ac-label"><FolderOpen :size="14" />分组</label>
+        <select v-model.number="form.group_id" class="ac-input appearance-none cursor-pointer">
+          <option v-for="group in groups" :key="group.id" :value="group.id">{{ group.icon }} {{ group.name }}</option>
         </select>
       </div>
 
-      <div class="border-t border-slate-100 pt-4 space-y-4">
+      <div class="rounded-3xl border-2 border-sakura-100 bg-sakura-50/50 p-4 space-y-4">
         <div>
-          <label class="block text-sm font-semibold text-slate-700 mb-2 flex items-center gap-2">
-            <Globe :size="16" class="text-slate-400" />
-            名称
-          </label>
-          <input
-            v-model="form.name"
-            type="text"
-            class="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm placeholder:text-slate-400"
-            placeholder="网站名称"
-            required
-          >
+          <label class="ac-label"><Globe :size="14" />名称</label>
+          <input v-model="form.name" type="text" class="ac-input" placeholder="网站名称" required>
         </div>
 
         <div>
-          <label class="block text-sm font-semibold text-slate-700 mb-2 flex items-center gap-2">
-            <ImageIcon :size="16" class="text-slate-400" />
-            图标地址
-          </label>
+          <label class="ac-label"><ImageIcon :size="14" />图标地址</label>
           <div class="flex items-center gap-3">
-            <input
-              v-model="form.logo_url"
-              type="text"
-              class="flex-1 px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm placeholder:text-slate-400"
-              placeholder="留空则使用站点 favicon"
-            >
-            <div class="w-12 h-12 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-center overflow-hidden flex-shrink-0">
+            <input v-model="form.logo_url" type="text" class="ac-input flex-1" placeholder="留空则使用站点 favicon">
+            <div class="w-12 h-12 rounded-2xl bg-white border-2 border-sakura-100 flex items-center justify-center overflow-hidden shrink-0">
               <img v-if="form.logo_url" :src="form.logo_url" alt="" class="w-8 h-8 object-contain">
-              <Globe v-else class="text-slate-300" :size="20" />
+              <Globe v-else class="text-sakura-300" :size="20" />
             </div>
           </div>
         </div>
 
         <div>
-          <label class="block text-sm font-semibold text-slate-700 mb-2 flex items-center gap-2">
-            <FileText :size="16" class="text-slate-400" />
-            描述
-          </label>
+          <label class="ac-label"><FileText :size="14" />描述</label>
           <textarea
             v-model="form.description"
-            class="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm placeholder:text-slate-400 min-h-[80px] resize-none"
-            placeholder="选填"
+            class="ac-input min-h-[80px] resize-none"
+            placeholder="写点什么吧～（选填）"
           />
         </div>
       </div>
     </form>
 
     <template #footer>
-      <button type="button" class="px-5 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-xl transition-colors" @click="emit('close')">
+      <button type="button" class="ac-btn ac-btn-ghost px-5 py-2.5 text-sm" @click="emit('close')">
         取消
       </button>
-      <button type="button" class="px-5 py-2.5 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-xl transition-all flex items-center gap-2" @click="submit">
+      <button type="button" class="ac-btn ac-btn-primary px-5 py-2.5 text-sm" @click="submit">
         <Check :size="16" />
         保存
       </button>

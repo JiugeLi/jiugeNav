@@ -3,6 +3,13 @@ export default defineNuxtConfig({
 
   modules: ['@nuxtjs/tailwindcss', 'nitro-cloudflare-dev'],
 
+  // 显式指定样式入口（Nuxt 4 的 srcDir 是 app/，模块默认查找常拿不到自定义 CSS）
+  tailwindcss: {
+    cssPath: '~/assets/css/tailwind.css',
+    configPath: 'tailwind.config.ts',
+    viewer: false,
+  },
+
   // 纯前端渲染：数据只在登录后由浏览器带 X-User-Id 请求，不需要 SSR
   ssr: false,
 

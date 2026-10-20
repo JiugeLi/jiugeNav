@@ -31,5 +31,5 @@ watch(src, () => { failed.value = false; });
     class="w-10 h-10 object-contain"
     @error="failed = true"
   >
-  <Globe v-else class="text-slate-300" :size="24" />
+  <Globe v-else class="text-sakura-300" :size="24" />
 </template>
