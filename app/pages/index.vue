@@ -88,7 +88,7 @@ function selectGroup(id: number) {
 </script>
 
 <template>
-  <div class="min-h-screen flex bg-slate-50 font-sans text-slate-900 overflow-hidden">
+  <div class="h-screen flex bg-slate-50 font-sans text-slate-900 overflow-hidden">
     <div v-if="loading" class="flex items-center justify-center h-screen w-full bg-slate-50">
       <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600" />
     </div>
@@ -98,7 +98,7 @@ function selectGroup(id: number) {
 
       <!-- 侧边栏：分组 + 账号 -->
       <aside
-        class="fixed lg:static inset-y-0 left-0 z-40 w-72 bg-white border-r border-slate-200 transform transition-transform duration-300 ease-in-out lg:transform-none flex flex-col h-full shadow-2xl lg:shadow-none"
+        class="fixed lg:static inset-y-0 left-0 z-40 w-72 shrink-0 bg-white border-r border-slate-200 transform transition-transform duration-300 ease-in-out lg:transform-none flex flex-col h-full overflow-hidden shadow-2xl lg:shadow-none"
         :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'"
       >
         <div class="p-6 border-b border-slate-100 flex items-center justify-between">
@@ -186,7 +186,7 @@ function selectGroup(id: number) {
         </div>
       </aside>
 
-      <main class="flex-1 flex flex-col h-screen overflow-hidden relative bg-slate-50/50">
+      <main class="flex-1 flex flex-col h-full overflow-hidden relative bg-slate-50/50">
         <div class="absolute top-0 inset-x-0 h-96 bg-gradient-to-b from-blue-50/50 to-transparent pointer-events-none z-0" />
 
         <header class="px-6 lg:px-8 py-4 lg:py-6 flex items-center justify-between sticky top-0 z-20 glass mb-6">
