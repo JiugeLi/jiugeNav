@@ -1,208 +1,94 @@
-import { getCloudflareContext } from '@opennextjs/cloudflare';
-import { createDb } from '@/db';
+import { getDb, getUserId, unauthorized, dbUnavailable, badRequest, notFound, serverError, parseId } from '@/lib/api';
 import { websites } from '@/db/schema';
+import { and, eq } from 'drizzle-orm';
 import { NextResponse } from 'next/server';
-import { eq, and } from 'drizzle-orm';
-import { getCurrentUserId } from '@/lib/get-current-user';
+import { normalizeUrl } from '@/lib/url';
 
-// 本地开发模式标志
-let isLocalDev = false;
+type Params = { params: Promise<{ id: string }> };
 
-// 检查是否在本地开发环境
-try {
-  const { env } = getCloudflareContext();
-  if (!env?.DB) {
-    isLocalDev = true;
-  }
-} catch (e) {
-  isLocalDev = true;
-}
+export async function GET(req: Request, { params }: Params) {
+  const db = getDb();
+  if (!db) return dbUnavailable();
 
-export async function GET(
-  req: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
+  const userId = getUserId(req);
+  if (!userId) return unauthorized();
+
+  const id = parseId((await params).id);
+  if (!id) return badRequest('网站 ID 不正确');
+
   try {
-    // 本地开发模式 - 返回模拟数据
-    if (isLocalDev) {
-      const { id } = await params;
-      return NextResponse.json({
-        id: parseInt(id),
-        user_id: 1,
-        group_id: 1,
-        name: 'Test Website',
-        url: 'https://example.com',
-        logo_url: null,
-        logo_type: 'default',
-        description: 'Test description',
-        username: null,
-        password: null,
-        click_count: 0,
-        last_clicked_at: null,
-        sort_order: 0,
-        created_at: new Date(),
-      });
-    }
+    const result = await db.select().from(websites)
+      .where(and(eq(websites.id, id), eq(websites.user_id, userId)));
 
-    const { id } = await params;
-    const { env } = getCloudflareContext();
-    const db = createDb(env.DB);
-
-    // 获取当前用户 ID
-    const userId = getCurrentUserId(req);
-    if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const result = await db.select().from(websites).where(and(
-      eq(websites.id, parseInt(id)),
-      eq(websites.user_id, userId)
-    ));
-
-    if (!result.length) {
-      return new NextResponse('Website not found', { status: 404 });
-    }
-
+    if (!result.length) return notFound('网站不存在');
     return NextResponse.json(result[0]);
   } catch (error) {
-    console.error('[WEBSITE_GET]', error);
-    return new NextResponse('Internal Error', { status: 500 });
+    return serverError('WEBSITE_GET', error);
   }
 }
 
-export async function PUT(
-  req: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function PUT(req: Request, { params }: Params) {
+  const db = getDb();
+  if (!db) return dbUnavailable();
+
+  const userId = getUserId(req);
+  if (!userId) return unauthorized();
+
+  const id = parseId((await params).id);
+  if (!id) return badRequest('网站 ID 不正确');
+
   try {
-    // 本地开发模式 - 返回模拟数据
-    if (isLocalDev) {
-      const { id } = await params;
-      const body = await req.json() as {
-        group_id: string;
-        name: string;
-        url: string;
-        logo_url: string;
-        logo_type: string;
-        description: string;
-        username?: string;
-        password?: string;
-        sort_order: number;
-      };
-      return NextResponse.json({
-        id: parseInt(id),
-        user_id: 1,
-        group_id: parseInt(body.group_id),
-        name: body.name,
-        url: body.url,
-        logo_url: body.logo_url || null,
-        logo_type: body.logo_type || 'default',
-        description: body.description || null,
-        username: body.username || null,
-        password: body.password || null,
-        click_count: 0,
-        last_clicked_at: null,
-        sort_order: body.sort_order || 0,
-        created_at: new Date(),
-      });
-    }
-
-    const { id } = await params;
-    const { env } = getCloudflareContext();
-    const db = createDb(env.DB);
-
-    // 获取当前用户 ID
-    const userId = getCurrentUserId(req);
-    if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
     const body = await req.json() as {
-        group_id: string;
-        name: string;
-        url: string;
-        logo_url: string;
-        logo_type: string;
-        description: string;
-        username?: string;
-        password?: string;
-        sort_order: number;
+      group_id?: string | number;
+      name?: string;
+      url?: string;
+      logo_url?: string;
+      logo_type?: string;
+      description?: string;
+      sort_order?: number;
     };
-    const {
-        group_id,
-        name,
-        url,
-        logo_url,
-        logo_type,
-        description,
-        username,
-        password,
-        sort_order,
-    } = body;
 
-    if (!id) {
-        return new NextResponse('Website ID is required', { status: 400 });
-    }
+    const name = body.name?.trim();
+    if (!name) return badRequest('网站名称不能为空');
+
+    const url = normalizeUrl(body.url);
+    if (!url) return badRequest('请输入有效的网站地址');
+
+    const groupId = Number(body.group_id);
 
     const result = await db.update(websites).set({
-        group_id: group_id ? parseInt(group_id) : undefined,
-        name,
-        url,
-        logo_url,
-        logo_type,
-        description,
-        username,
-        password,
-        sort_order,
-    }).where(and(
-      eq(websites.id, parseInt(id)),
-      eq(websites.user_id, userId)
-    )).returning();
+      group_id: Number.isInteger(groupId) && groupId > 0 ? groupId : undefined,
+      name,
+      url,
+      logo_url: body.logo_url?.trim() || null,
+      logo_type: body.logo_type || 'default',
+      description: body.description?.trim() || null,
+      sort_order: Number(body.sort_order) || 0,
+    })
+      .where(and(eq(websites.id, id), eq(websites.user_id, userId)))
+      .returning();
 
-    if (result.length === 0) {
-      return NextResponse.json({ error: 'Website not found' }, { status: 404 });
-    }
-
+    if (!result.length) return notFound('网站不存在');
     return NextResponse.json(result[0]);
   } catch (error) {
-    console.error('[WEBSITE_PUT]', error);
-    return new NextResponse('Internal Error', { status: 500 });
+    return serverError('WEBSITE_PUT', error);
   }
 }
 
-export async function DELETE(
-    req: Request,
-    { params }: { params: Promise<{ id: string }> }
-) {
-    try {
-        // 本地开发模式 - 返回成功
-        if (isLocalDev) {
-            const { id } = await params;
-            return NextResponse.json({ message: 'Website deleted' });
-        }
+export async function DELETE(req: Request, { params }: Params) {
+  const db = getDb();
+  if (!db) return dbUnavailable();
 
-        const { id } = await params;
-        const { env } = getCloudflareContext();
-        const db = createDb(env.DB);
+  const userId = getUserId(req);
+  if (!userId) return unauthorized();
 
-        // 获取当前用户 ID
-        const userId = getCurrentUserId(req);
-        if (!userId) {
-          return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-        }
+  const id = parseId((await params).id);
+  if (!id) return badRequest('网站 ID 不正确');
 
-        if (!id) {
-            return new NextResponse('Website ID is required', { status: 400 });
-        }
-
-        await db.delete(websites).where(and(
-          eq(websites.id, parseInt(id)),
-          eq(websites.user_id, userId)
-        ));
-
-        return NextResponse.json({ message: 'Website deleted' });
-    } catch (error) {
-        console.error('[WEBSITE_DELETE]', error);
-        return new NextResponse('Internal Error', { status: 500 });
-    }
+  try {
+    await db.delete(websites).where(and(eq(websites.id, id), eq(websites.user_id, userId)));
+    return NextResponse.json({ message: '网站已删除' });
+  } catch (error) {
+    return serverError('WEBSITE_DELETE', error);
+  }
 }

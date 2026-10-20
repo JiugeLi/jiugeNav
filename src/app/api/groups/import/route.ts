@@ -1,90 +1,68 @@
-import { getCloudflareContext } from '@opennextjs/cloudflare';
-import { createDb } from '@/db';
+import { getDb, getUserId, unauthorized, dbUnavailable, badRequest, serverError } from '@/lib/api';
 import { groups, websites } from '@/db/schema';
-import { NextResponse } from 'next/server';
 import { eq } from 'drizzle-orm';
-import { getCurrentUserId } from '@/lib/get-current-user';
+import { NextResponse } from 'next/server';
 
-interface ImportData {
-    groups: Array<{
-        id?: number;
-        name: string;
-        icon: string;
-        sort_order: number;
-    }>;
-    websites: Array<{
-        group_id: number;
-        name: string;
-        url: string;
-        logo_url: string;
-        logo_type: string;
-        description: string;
-        sort_order: number;
-    }>;
+interface ImportPayload {
+  groups: Array<{ id?: number; name: string; icon: string; sort_order: number }>;
+  websites: Array<{
+    group_id: number; name: string; url: string;
+    logo_url: string; logo_type: string; description: string; sort_order: number;
+  }>;
 }
 
+/** 从 JSON 备份导入；mode=replace 时先清空当前用户数据。 */
 export async function POST(req: Request) {
+  const db = getDb();
+  if (!db) return dbUnavailable();
+
+  const userId = getUserId(req);
+  if (!userId) return unauthorized();
+
   try {
-    const { env } = getCloudflareContext();
-    const db = createDb(env.DB);
-    
-    // 获取当前用户 ID
-    const userId = getCurrentUserId(req);
-    if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-    
-    const body = await req.json() as { data: ImportData; mode: 'merge' | 'replace' };
-    const { data, mode = 'merge' } = body; 
+    const body = await req.json() as { data?: ImportPayload; mode?: 'merge' | 'replace' };
+    const data = body.data;
+    if (!data?.groups || !data?.websites) return badRequest('导入数据格式不正确');
 
-    if (!data || !data.groups || !data.websites) {
-      return new NextResponse('Invalid data format', { status: 400 });
-    }
-
-    // If replace, delete everything for this user
-    if (mode === 'replace') {
+    if (body.mode === 'replace') {
       await db.delete(websites).where(eq(websites.user_id, userId));
       await db.delete(groups).where(eq(groups.user_id, userId));
     }
 
-    // Simple import logic
+    const now = new Date();
     const groupIdMap: Record<number, number> = {};
 
-    for (const grp of data.groups) {
-      const result = await db.insert(groups).values({
-          user_id: userId,
-          name: grp.name,
-          icon: grp.icon,
-          sort_order: grp.sort_order,
-          created_at: new Date(),
+    for (const group of data.groups) {
+      const inserted = await db.insert(groups).values({
+        user_id: userId,
+        name: group.name,
+        icon: group.icon,
+        sort_order: group.sort_order,
+        created_at: now,
       }).returning();
-      
-      if (grp.id) {
-          groupIdMap[grp.id] = result[0].id;
-      }
+
+      if (group.id) groupIdMap[group.id] = inserted[0].id;
     }
 
     for (const site of data.websites) {
-      const newGroupId = groupIdMap[site.group_id];
-      
-      if (newGroupId) {
-        await db.insert(websites).values({
-            user_id: userId,
-            group_id: newGroupId,
-            name: site.name,
-            url: site.url,
-            logo_url: site.logo_url,
-            logo_type: site.logo_type,
-            description: site.description,
-            sort_order: site.sort_order,
-            created_at: new Date(),
-        });
-      }
+      const groupId = groupIdMap[site.group_id];
+      if (!groupId) continue;
+
+      await db.insert(websites).values({
+        user_id: userId,
+        group_id: groupId,
+        name: site.name,
+        url: site.url,
+        logo_url: site.logo_url,
+        logo_type: site.logo_type,
+        description: site.description,
+        sort_order: site.sort_order,
+        created_at: now,
+      });
     }
 
-    return NextResponse.json({ message: 'Import successful' });
+    return NextResponse.json({ message: '导入成功' });
   } catch (error) {
-    console.error('[IMPORT_POST]', error);
-    return new NextResponse('Internal Error', { status: 500 });
+    return serverError('GROUPS_IMPORT', error);
   }
 }

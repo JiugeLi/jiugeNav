@@ -1,9 +1,10 @@
-import { getCloudflareContext } from '@opennextjs/cloudflare';
-import { createDb } from '@/db';
+import { getDb, getUserId, unauthorized, dbUnavailable, badRequest, serverError } from '@/lib/api';
 import { websites } from '@/db/schema';
+import { and, eq, inArray } from 'drizzle-orm';
 import { NextResponse } from 'next/server';
-import { eq, and } from 'drizzle-orm';
-import { getCurrentUserId } from '@/lib/get-current-user';
+
+const BATCH_SIZE = 10;
+const TIMEOUT_MS = 5000;
 
 interface CheckResult {
   id: number;
@@ -14,148 +15,85 @@ interface CheckResult {
   error?: string;
 }
 
-async function checkLink(url: string): Promise<CheckResult> {
-  const timeout = 5000; // 5 seconds timeout per link (reduced for faster checking)
+async function checkLink(url: string): Promise<Omit<CheckResult, 'id' | 'name'>> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
+  const headers = { 'User-Agent': 'Mozilla/5.0 (compatible; SoloLink LinkChecker)' };
 
   try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), timeout);
+    // 先 HEAD，失败再退化为 GET
+    let response = await fetch(url, { method: 'HEAD', redirect: 'follow', signal: controller.signal, headers })
+      .catch(() => fetch(url, { method: 'GET', redirect: 'follow', signal: controller.signal, headers }));
 
-    const response = await fetch(url, {
-      method: 'HEAD',
-      redirect: 'follow',
-      signal: controller.signal,
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (compatible; jiugeNav LinkChecker)',
-      },
-    }).catch(async (err) => {
-      // If HEAD fails, try GET
-      if (err.name === 'AbortError') {
-        throw new Error('Timeout');
-      }
-      return fetch(url, {
-        method: 'GET',
-        redirect: 'follow',
-        signal: controller.signal,
-        headers: {
-          'User-Agent': 'Mozilla/5.0 (compatible; jiugeNav LinkChecker)',
-        },
-      });
-    });
-
-    clearTimeout(timeoutId);
-
-    const statusCode = response.status;
-    const statusOk = statusCode >= 200 && statusCode < 400;
-
+    const ok = response.status >= 200 && response.status < 400;
+    return { url, status: ok ? 'ok' : 'error', statusCode: response.status };
+  } catch (error) {
+    const aborted = (error as Error)?.name === 'AbortError';
     return {
-      id: 0,
-      name: '',
       url,
-      status: statusOk ? 'ok' : 'error',
-      statusCode,
+      status: aborted ? 'timeout' : 'error',
+      error: aborted ? '超时' : (error as Error)?.message || 'Unknown error',
     };
-  } catch (error: any) {
-    return {
-      id: 0,
-      name: '',
-      url,
-      status: error?.message === 'Timeout' ? 'timeout' : 'error',
-      error: error?.message || 'Unknown error',
-    };
+  } finally {
+    clearTimeout(timer);
   }
 }
 
-// GET - Check all links (progressive checking)
+/** 分批检查链接，每批 10 条，前端轮询直到 isLastBatch。 */
 export async function GET(req: Request) {
+  const db = getDb();
+  if (!db) return dbUnavailable();
+
+  const userId = getUserId(req);
+  if (!userId) return unauthorized();
+
   try {
-    const { env } = getCloudflareContext();
-    if (!env?.DB) {
-      return new NextResponse('Database not available', { status: 503 });
-    }
-    const db = createDb(env.DB);
+    const batchIndex = Math.max(0, Number(new URL(req.url).searchParams.get('batch')) || 0);
 
-    // Get current user ID
-    const userId = getCurrentUserId(req);
-    if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    // Get query params for batch checking
-    const url = new URL(req.url);
-    const batchIndex = parseInt(url.searchParams.get('batch') || '0');
-    const batchSize = 10; // Check 10 links per batch
-
-    // Get all websites for this user
-    const allWebsites = await db.select().from(websites)
+    const all = await db.select({ id: websites.id, name: websites.name, url: websites.url })
+      .from(websites)
       .where(eq(websites.user_id, userId));
 
-    // Calculate batch range
-    const start = batchIndex * batchSize;
-    const end = Math.min(start + batchSize, allWebsites.length);
-    const isLastBatch = end >= allWebsites.length;
+    const start = batchIndex * BATCH_SIZE;
+    const slice = all.slice(start, start + BATCH_SIZE);
+    const isLastBatch = start + BATCH_SIZE >= all.length;
 
-    // Check links in this batch (in parallel for speed)
-    const batchPromises = [];
-    for (let i = start; i < end; i++) {
-      const site = allWebsites[i];
-      batchPromises.push(
-        checkLink(site.url).then(result => ({
-          ...result,
-          id: site.id,
-          name: site.name,
-          url: site.url,
-        }))
-      );
-    }
-
-    const batchResults = await Promise.all(batchPromises);
+    const results: CheckResult[] = await Promise.all(
+      slice.map(async (site) => ({ id: site.id, name: site.name, ...(await checkLink(site.url)) }))
+    );
 
     return NextResponse.json({
-      total: allWebsites.length,
+      total: all.length,
       batchIndex,
-      batchSize,
+      batchSize: BATCH_SIZE,
       isLastBatch,
-      results: batchResults,
-      progress: isLastBatch ? 100 : Math.round(((batchIndex + 1) * batchSize / allWebsites.length) * 100),
+      results,
+      progress: all.length === 0 || isLastBatch ? 100 : Math.round(((batchIndex + 1) * BATCH_SIZE / all.length) * 100),
     });
   } catch (error) {
-    console.error('[WEBSITES_CHECK]', error);
-    return new NextResponse('Internal Error', { status: 500 });
+    return serverError('WEBSITES_CHECK', error);
   }
 }
 
-// DELETE - Bulk delete bad links
+/** 批量删除失效链接。 */
 export async function DELETE(req: Request) {
+  const db = getDb();
+  if (!db) return dbUnavailable();
+
+  const userId = getUserId(req);
+  if (!userId) return unauthorized();
+
   try {
-    const { env } = getCloudflareContext();
-    if (!env?.DB) {
-      return new NextResponse('Database not available', { status: 503 });
-    }
-    const db = createDb(env.DB);
+    const { ids } = await req.json() as { ids?: number[] };
+    if (!Array.isArray(ids) || ids.length === 0) return badRequest('请选择要删除的链接');
 
-    // Get current user ID
-    const userId = getCurrentUserId(req);
-    if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const body = await req.json() as { ids: number[] };
-    const { ids } = body;
-
-    if (!ids || !Array.isArray(ids) || ids.length === 0) {
-      return new NextResponse('Invalid request', { status: 400 });
-    }
-
-    // Delete the websites using a loop for safety
-    for (const id of ids) {
-      await db.delete(websites)
-        .where(and(eq(websites.id, id), eq(websites.user_id, userId)));
-    }
+    await db.delete(websites).where(and(
+      eq(websites.user_id, userId),
+      inArray(websites.id, ids),
+    ));
 
     return NextResponse.json({ success: true, deleted: ids.length });
   } catch (error) {
-    console.error('[WEBSITES_CHECK_DELETE]', error);
-    return new NextResponse('Internal Error', { status: 500 });
+    return serverError('WEBSITES_CHECK_DELETE', error);
   }
 }

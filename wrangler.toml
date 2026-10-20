@@ -18,6 +18,3 @@ binding = "DB"
 database_name = "jiugenav"
 database_id = "54340279-33f5-4f57-98db-c70316233a49"
 migrations_dir = "drizzle"
-
-[ai]
-binding = "AI"

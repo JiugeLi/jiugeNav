@@ -1,95 +1,45 @@
-import { getCloudflareContext } from '@opennextjs/cloudflare';
-import { createDb } from '@/db';
+// 管理员密码认证（仅服务端）。密码以 SHA-256 存于 admin 表。
+import { hashPassword, verifyPassword as verifyPasswordHash } from './password';
 import { admin } from '@/db/schema';
-import { verifyPassword as verifyPasswordHash, getDefaultPasswordHash } from './password';
 import { eq } from 'drizzle-orm';
-import { sql } from 'drizzle-orm';
+import { getDb } from './api';
 
-// 检查是否在本地开发环境
-const isLocalDev = typeof process.env.WRANGLER === 'undefined';
-
-/**
- * 验证密码
- * @param password 用户输入的密码
- * @returns 是否验证通过
- */
+/** 校验管理员密码；首次使用时用默认密码初始化 admin 表。 */
 export async function verifyPassword(password: string): Promise<boolean> {
   try {
-    let db: any;
+    const db = getDb();
+    if (!db) return false;
 
-    if (isLocalDev && process.env.D1_DATABASE_ID && process.env.CLOUDFLARE_ACCOUNT_ID) {
-      // 本地开发模式：使用 HTTP 代理连接远程 D1
-      db = createDb(null);
-      if (!db?.operations) {
-        console.warn('[AUTH] DB not ready, using fallback');
-        return false;
-      }
-    } else {
-      // Cloudflare Workers 模式
-      const { env } = getCloudflareContext();
-      db = createDb(env.DB);
+    const rows = await db.select().from(admin).limit(1);
+
+    if (rows.length === 0) {
+      const defaultHash = await hashPassword('admin123');
+      await db.insert(admin).values({ password_hash: defaultHash, updated_at: new Date() });
+      return verifyPasswordHash(password, defaultHash);
     }
 
-    // 从数据库获取密码哈希
-    const result = await db.select().from(admin).limit(1);
-
-    if (result.length === 0) {
-      // 如果数据库中没有密码，初始化默认密码
-      const defaultHash = await getDefaultPasswordHash();
-      await db.insert(admin).values({ password_hash: defaultHash });
-
-      // 验证输入的密码是否是默认密码
-      return await verifyPasswordHash(password, defaultHash);
-    }
-
-    // 验证密码
-    return await verifyPasswordHash(password, result[0].password_hash);
+    return verifyPasswordHash(password, rows[0].password_hash);
   } catch (error) {
     console.error('[AUTH] Password verification failed:', error);
     return false;
   }
 }
 
-/**
- * 修改密码
- * @param newPassword 新密码
- * @returns 是否修改成功
- */
+/** 修改管理员密码。 */
 export async function changePassword(newPassword: string): Promise<boolean> {
   try {
-    let db: any;
+    const db = getDb();
+    if (!db) return false;
 
-    if (isLocalDev && process.env.D1_DATABASE_ID && process.env.CLOUDFLARE_ACCOUNT_ID) {
-      // 本地开发模式：使用 HTTP 代理连接远程 D1
-      db = createDb(null);
-      if (!db?.operations) {
-        console.warn('[AUTH] DB not ready');
-        return false;
-      }
+    const password_hash = await hashPassword(newPassword);
+    const rows = await db.select().from(admin).limit(1);
+
+    if (rows.length === 0) {
+      await db.insert(admin).values({ password_hash, updated_at: new Date() });
     } else {
-      // Cloudflare Workers 模式
-      const { env } = getCloudflareContext();
-      db = createDb(env.DB);
-    }
-
-    const { hashPassword } = await import('./password');
-
-    const newHash = await hashPassword(newPassword);
-
-    // 检查是否已有记录
-    const result = await db.select().from(admin).limit(1);
-
-    if (result.length === 0) {
-      // 插入新记录
-      await db.insert(admin).values({ password_hash: newHash });
-    } else {
-      // 更新现有记录
       await db.update(admin)
-        .set({
-          password_hash: newHash,
-          updated_at: new Date()
-        })
-        .where(eq(admin.id, result[0].id));
+        .set({ password_hash, updated_at: new Date() })
+        .where(eq(admin.id, rows[0].id));
     }
 
     return true;
@@ -97,22 +47,4 @@ export async function changePassword(newPassword: string): Promise<boolean> {
     console.error('[AUTH] Password change failed:', error);
     return false;
   }
-}
-
-// 客户端使用 localStorage 存储登录状态
-export const AUTH_KEY = 'jiugenav_admin_auth';
-
-export function isLoggedIn(): boolean {
-  if (typeof window === 'undefined') return false;
-  return localStorage.getItem(AUTH_KEY) === 'true';
-}
-
-export function login(): void {
-  if (typeof window === 'undefined') return;
-  localStorage.setItem(AUTH_KEY, 'true');
-}
-
-export function logout(): void {
-  if (typeof window === 'undefined') return;
-  localStorage.removeItem(AUTH_KEY);
 }

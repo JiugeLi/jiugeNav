@@ -1,46 +1,28 @@
-import { getCloudflareContext } from '@opennextjs/cloudflare';
-import { createDb } from '@/db';
+import { getDb, getUserId, unauthorized, dbUnavailable, serverError } from '@/lib/api';
 import { groups, websites } from '@/db/schema';
-import { NextResponse } from 'next/server';
 import { asc, eq } from 'drizzle-orm';
-import { getCurrentUserId } from '@/lib/get-current-user';
+import { NextResponse } from 'next/server';
 
+/** 导出当前用户的全部分组与网站为 JSON 备份。 */
 export async function GET(req: Request) {
-  try {
-    const { env } = getCloudflareContext();
-    const db = createDb(env.DB);
-    
-    // Get current user ID
-    const userId = getCurrentUserId(req);
-    if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-    
-    // Export only the current user's data
-    const userGroups = await db
-      .select()
-      .from(groups)
-      .where(eq(groups.user_id, userId))
-      .orderBy(asc(groups.sort_order));
-      
-    const userWebsites = await db
-      .select()
-      .from(websites)
-      .where(eq(websites.user_id, userId))
-      .orderBy(asc(websites.sort_order));
+  const db = getDb();
+  if (!db) return dbUnavailable();
 
-    const exportData = {
+  const userId = getUserId(req);
+  if (!userId) return unauthorized();
+
+  try {
+    const [userGroups, userWebsites] = await Promise.all([
+      db.select().from(groups).where(eq(groups.user_id, userId)).orderBy(asc(groups.sort_order)),
+      db.select().from(websites).where(eq(websites.user_id, userId)).orderBy(asc(websites.sort_order)),
+    ]);
+
+    return NextResponse.json({
       version: '1.0',
       exportedAt: new Date().toISOString(),
-      data: {
-        groups: userGroups,
-        websites: userWebsites,
-      },
-    };
-
-    return NextResponse.json(exportData);
+      data: { groups: userGroups, websites: userWebsites },
+    });
   } catch (error) {
-    console.error('[EXPORT_GET]', error);
-    return new NextResponse('Internal Error', { status: 500 });
+    return serverError('GROUPS_EXPORT', error);
   }
 }

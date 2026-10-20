@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
-import { getUserSession, clearUserSession, isUserLoggedIn } from '@/lib/user-auth';
+import React, { useState, useEffect } from 'react';
+import { getUserSession, clearUserSession } from '@/lib/session';
 import { apiGet, apiPost, apiPut, apiDelete } from '@/lib/api-client';
 import { Group, Website } from '@/types';
 import LoginModal from './LoginModal';
@@ -13,381 +13,333 @@ import LinkCheckerModal from './LinkCheckerModal';
 import {
   Search, Plus, Settings, LogOut, Trash2, Edit2,
   LayoutGrid, FolderOpen, Globe, ChevronRight,
-  Menu, X, CheckCircle, Link2, MousePointerClick, Calendar
+  Menu, X, CheckCircle, Link2, MousePointerClick, Calendar,
 } from 'lucide-react';
 
+interface Stats {
+  totalLinks: number;
+  totalClicks: number;
+  weeklyClicks: number;
+  newLinksThisWeek: number;
+}
 
-const WebsiteLogo = ({ website }: { website: Website }) => {
-  const [imgSrc, setImgSrc] = useState<string | null>(null);
-  const [failed, setFailed] = useState(false);
+const EMPTY_STATS: Stats = { totalLinks: 0, totalClicks: 0, weeklyClicks: 0, newLinksThisWeek: 0 };
+
+const STAT_CARDS: Array<{
+  key: keyof Stats;
+  label: string;
+  icon: React.ReactNode;
+  color: string;
+}> = [
+  { key: 'totalLinks', label: '总链接数', icon: <Link2 size={20} />, color: 'from-blue-500 to-blue-600 shadow-blue-500/30' },
+  { key: 'totalClicks', label: '总点击量', icon: <MousePointerClick size={20} />, color: 'from-emerald-500 to-emerald-600 shadow-emerald-500/30' },
+  { key: 'weeklyClicks', label: '本周点击', icon: <Calendar size={20} />, color: 'from-violet-500 to-violet-600 shadow-violet-500/30' },
+  { key: 'newLinksThisWeek', label: '本周新增', icon: <Plus size={20} />, color: 'from-amber-500 to-orange-500 shadow-amber-500/30' },
+];
+
+function WebsiteLogo({ website }: { website: Website }) {
+  const [src, setSrc] = useState<string | null>(null);
 
   useEffect(() => {
     try {
       const siteUrl = new URL(website.url);
-      const savedLogo = website.logo_url?.trim();
-      const isGoogleFavicon = savedLogo &&
-        (savedLogo.includes('google.com/s2/favicons') || savedLogo.includes('gstatic.com/faviconV2'));
+      const saved = website.logo_url?.trim();
+      const isGoogleFavicon = saved?.includes('google.com/s2/favicons') || saved?.includes('gstatic.com/faviconV2');
 
-      // Google's favicon service frequently returns noisy 404 responses for intranet
-      // and less common domains. Use the site's conventional favicon instead.
-      const nextSrc = !savedLogo || isGoogleFavicon || !savedLogo.startsWith('https://')
-        ? `${siteUrl.origin}/favicon.ico`
-        : savedLogo;
-
-      setImgSrc(nextSrc);
-      setFailed(false);
+      // 无 logo / 指向 Google 图标服务 / 非 https 时，统一退化到站点自身的 favicon
+      setSrc(!saved || isGoogleFavicon || !saved.startsWith('https://') ? `${siteUrl.origin}/favicon.ico` : saved);
     } catch {
-      setImgSrc(null);
-      setFailed(true);
+      setSrc(null);
     }
   }, [website.logo_url, website.url]);
 
-  const handleError = () => {
-    // Do not call a third-party favicon proxy after a failure; display a quiet fallback.
-    setFailed(true);
-  };
-
-  if (failed || !imgSrc) {
-    return <Globe className="text-slate-300" size={24} />;
-  }
+  if (!src) return <Globe className="text-slate-300" size={24} />;
 
   return (
-    <img 
-      src={imgSrc} 
-      alt={website.name} 
+    <img
+      src={src}
+      alt={website.name}
       className="w-10 h-10 object-contain"
-      onError={handleError}
+      onError={() => setSrc(null)}
     />
   );
-};
+}
 
 export default function Dashboard() {
   const [groups, setGroups] = useState<Group[]>([]);
   const [websites, setWebsites] = useState<Website[]>([]);
+  const [stats, setStats] = useState<Stats>(EMPTY_STATS);
   const [activeGroupId, setActiveGroupId] = useState<number | null>(null);
-  const [isAdmin, setIsAdmin] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [userSession, setUserSession] = useState<ReturnType<typeof getUserSession>>(null);
-  const [stats, setStats] = useState({
-    totalLinks: 0,
-    totalClicks: 0,
-    weeklyClicks: 0,
-    newLinksThisWeek: 0,
-  });
+  const [session, setSession] = useState<ReturnType<typeof getUserSession>>(null);
 
-  // Modals
-  const [showLoginModal, setShowLoginModal] = useState(false);
-  const [showGroupModal, setShowGroupModal] = useState(false);
-  const [showWebsiteModal, setShowWebsiteModal] = useState(false);
-  const [showSettingsModal, setShowSettingsModal] = useState(false);
-  const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
-  const [showLinkCheckerModal, setShowLinkCheckerModal] = useState(false);
   const [editingGroup, setEditingGroup] = useState<Group | null>(null);
   const [editingWebsite, setEditingWebsite] = useState<Website | null>(null);
+  const [modal, setModal] = useState<'' | 'login' | 'group' | 'website' | 'settings' | 'password' | 'checker'>('');
 
-  // 初始化数据
-  useEffect(() => {
-    // 检查登录状态
-    const session = getUserSession();
-    setUserSession(session);
-    setIsAdmin(session?.isAdmin || false);
-    
-    if (session) {
-      fetchData();
-    } else {
-      setLoading(false);
-      setShowLoginModal(true);
-    }
-  }, []);
+  const isAdmin = session?.isAdmin ?? false;
 
-  const fetchData = async (force = false) => {
-    if (!force && groups.length > 0 && websites.length > 0) {
-      return;
-    }
-
+  const loadData = async () => {
     try {
-      const groupsData = await apiGet<Group[]>('/api/groups');
-      setGroups(groupsData);
-      if (groupsData.length > 0 && !activeGroupId) {
-        setActiveGroupId(groupsData[0].id);
-      }
+      const [groupData, websiteData, statsData] = await Promise.all([
+        apiGet<Group[]>('/api/groups'),
+        apiGet<Website[]>('/api/websites'),
+        apiGet<Stats>('/api/stats'),
+      ]);
 
-      const websitesData = await apiGet<Website[]>('/api/websites');
-      setWebsites(websitesData);
-
-      // Fetch stats
-      const statsData = await apiGet('/api/stats');
+      setGroups(groupData);
+      setWebsites(websiteData);
       setStats(statsData);
-
-      setLoading(false);
+      setActiveGroupId((current) => current ?? groupData[0]?.id ?? null);
     } catch (error) {
-      console.error('Failed to fetch data', error);
-      setLoading(false);
-      // 如果是 401 错误，清除会话并显示登录
+      console.error('Failed to load data', error);
+      // 会话失效：清空本地会话并回到登录
       if (error instanceof Error && error.message.includes('401')) {
         clearUserSession();
-        setUserSession(null);
-        setShowLoginModal(true);
+        setSession(null);
+        setModal('login');
       }
+    } finally {
+      setLoading(false);
     }
   };
 
+  useEffect(() => {
+    const current = getUserSession();
+    setSession(current);
+
+    if (current) {
+      loadData();
+    } else {
+      setLoading(false);
+      setModal('login');
+    }
+  }, []);
+
   const handleLogin = () => {
-    const session = getUserSession();
-    setUserSession(session);
-    setIsAdmin(session?.isAdmin || false);
-    fetchData(true);
+    setSession(getUserSession());
+    loadData();
   };
 
   const handleLogout = () => {
     clearUserSession();
-    setUserSession(null);
-    setIsAdmin(false);
+    setSession(null);
     setGroups([]);
     setWebsites([]);
-    setShowLoginModal(true);
+    setStats(EMPTY_STATS);
+    setModal('login');
   };
 
-  // CRUD Handlers
-  const handleGroupSubmit = async (data: Partial<Group>) => {
+  const saveGroup = async (data: Partial<Group>) => {
     try {
       if (editingGroup) {
         await apiPut(`/api/groups/${editingGroup.id}`, data);
       } else {
         await apiPost('/api/groups', data);
       }
-      fetchData(true);
-      setShowGroupModal(false);
+      setModal('');
       setEditingGroup(null);
+      await loadData();
     } catch (error) {
       console.error('Error saving group', error);
+      alert(error instanceof Error ? error.message : '保存分组失败');
     }
   };
 
-  const handleDeleteGroup = async (id: number) => {
+  const deleteGroup = async (id: number) => {
     if (!confirm('确定删除此分组及其所有网站吗？')) return;
     try {
       await apiDelete(`/api/groups/${id}`);
-      fetchData(true);
-      if (activeGroupId === id) setActiveGroupId(groups[0]?.id || null);
+      if (activeGroupId === id) setActiveGroupId(null);
+      loadData();
     } catch (error) {
       console.error('Error deleting group', error);
+      alert(error instanceof Error ? error.message : '删除分组失败');
     }
   };
 
-  const handleWebsiteSubmit = async (data: Partial<Website>) => {
+  const saveWebsite = async (data: Partial<Website>) => {
     try {
       if (editingWebsite) {
         await apiPut(`/api/websites/${editingWebsite.id}`, data);
       } else {
         await apiPost('/api/websites', data);
       }
-      fetchData(true);
-      setShowWebsiteModal(false);
+      setModal('');
       setEditingWebsite(null);
+      await loadData();
     } catch (error) {
       console.error('Error saving website', error);
       alert(error instanceof Error ? error.message : '保存网站失败，请稍后重试');
     }
   };
 
-  const handleDeleteWebsite = async (id: number) => {
+  const deleteWebsite = async (id: number) => {
     if (!confirm('确定删除此网站吗？')) return;
     try {
       await apiDelete(`/api/websites/${id}`);
-      fetchData(true);
+      loadData();
     } catch (error) {
       console.error('Error deleting website', error);
     }
   };
 
-  const handleWebsiteClick = async (website: Website) => {
-    try {
-      apiPost(`/api/websites/${website.id}/click`, {});
-    } catch (e) {}
+  const openWebsite = (website: Website) => {
+    // 点击统计不阻塞跳转
+    apiPost(`/api/websites/${website.id}/click`).catch(() => null);
     window.open(website.url, '_blank');
   };
 
-  // Filtering
-  const filteredWebsites = useMemo(() => {
-    let result = websites;
+  const filterWebsites = (): Website[] => {
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
-      result = result.filter(
-        w => 
-          w.name.toLowerCase().includes(q) || 
-          w.url.toLowerCase().includes(q) || 
-          w.description?.toLowerCase().includes(q)
+      return websites.filter((w) =>
+        w.name.toLowerCase().includes(q) ||
+        w.url.toLowerCase().includes(q) ||
+        w.description?.toLowerCase().includes(q)
       );
-    } else if (activeGroupId) {
-      result = result.filter(w => w.group_id === activeGroupId);
     }
-    return result;
-  }, [websites, activeGroupId, searchQuery]);
+    return activeGroupId ? websites.filter((w) => w.group_id === activeGroupId) : websites;
+  };
 
-  const activeGroup = groups.find(g => g.id === activeGroupId);
+  const visibleWebsites = filterWebsites();
 
-  // 过滤掉没有网站的空分组（仅对未登录用户生效，登录用户需要看到空分组以便管理）
-  const visibleGroups = useMemo(() => {
-    if (userSession) return groups;
-    return groups.filter(group => websites.some(w => w.group_id === group.id));
-  }, [groups, websites, userSession]);
-
-  if (loading) return (
-    <div className="flex items-center justify-center h-screen bg-slate-50">
-      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-    </div>
-  );
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-screen bg-slate-50">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex bg-slate-50 font-sans text-slate-900 overflow-hidden">
-      {/* Mobile Sidebar Overlay */}
       {sidebarOpen && (
-        <div 
-          className="fixed inset-0 bg-black/50 z-30 lg:hidden backdrop-blur-sm transition-opacity"
+        <div
+          className="fixed inset-0 bg-black/50 z-30 lg:hidden backdrop-blur-sm"
           onClick={() => setSidebarOpen(false)}
         />
       )}
 
-      {/* Sidebar */}
+      {/* 侧边栏：分组列表 + 账号操作 */}
       <aside className={`
-        fixed lg:static inset-y-0 left-0 z-40 w-72 bg-white border-r border-slate-200 
+        fixed lg:static inset-y-0 left-0 z-40 w-72 bg-white border-r border-slate-200
         transform transition-transform duration-300 ease-in-out lg:transform-none
         flex flex-col h-full shadow-2xl lg:shadow-none
         ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
       `}>
-        <div className="p-6 border-b border-slate-100">
-          <div className="flex items-center justify-between mb-2">
-            <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent flex items-center gap-2">
-              <LayoutGrid className="text-blue-600" size={24} />
-              NavDev
-            </h1>
-            <button 
-              className="lg:hidden p-2 text-slate-400 hover:text-slate-600"
-              onClick={() => setSidebarOpen(false)}
-            >
-              <X size={20} />
-            </button>
-          </div>
+        <div className="p-6 border-b border-slate-100 flex items-center justify-between">
+          <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent flex items-center gap-2">
+            <LayoutGrid className="text-blue-600" size={24} />
+            SoloLink
+          </h1>
+          <button className="lg:hidden p-2 text-slate-400 hover:text-slate-600" onClick={() => setSidebarOpen(false)}>
+            <X size={20} />
+          </button>
         </div>
-        
+
         <div className="flex-1 overflow-y-auto p-4 space-y-2 custom-scrollbar">
           <div className="flex items-center justify-between px-2 mb-2">
             <h2 className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Groups</h2>
-            {userSession && (
-              <button 
-                onClick={() => { setEditingGroup(null); setShowGroupModal(true); }}
+            {session && (
+              <button
+                onClick={() => { setEditingGroup(null); setModal('group'); }}
                 className="p-1.5 hover:bg-blue-50 text-slate-400 hover:text-blue-600 rounded-lg transition-colors"
-                title="Create Group"
+                title="新建分组"
               >
                 <Plus size={16} />
               </button>
             )}
           </div>
-          
-          {visibleGroups.map(group => {
-            const groupWebsiteCount = websites.filter(w => w.group_id === group.id).length;
+
+          {groups.map((group) => {
+            const count = websites.filter((w) => w.group_id === group.id).length;
+            const active = activeGroupId === group.id;
+
             return (
               <div
                 key={group.id}
                 className={`group flex items-center justify-between px-4 py-3 rounded-xl cursor-pointer transition-all duration-200 ${
-                  activeGroupId === group.id
-                    ? 'bg-blue-50 text-blue-700 shadow-sm ring-1 ring-blue-100'
-                    : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                  active ? 'bg-blue-50 text-blue-700 shadow-sm ring-1 ring-blue-100' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
                 }`}
-                onClick={() => {
-                  setActiveGroupId(group.id);
-                  setSidebarOpen(false);
-                }}
+                onClick={() => { setActiveGroupId(group.id); setSidebarOpen(false); }}
               >
                 <div className="flex items-center gap-3 truncate flex-1">
-                  <span className={`text-lg transition-transform duration-200 ${activeGroupId === group.id ? 'scale-110' : 'group-hover:scale-110'}`}>
+                  <span className={`text-lg transition-transform duration-200 ${active ? 'scale-110' : 'group-hover:scale-110'}`}>
                     {group.icon || '📁'}
                   </span>
                   <span className="font-medium truncate">{group.name}</span>
-                  <span className={`text-xs px-2 py-0.5 rounded-full ${
-                    activeGroupId === group.id
-                      ? 'bg-blue-200 text-blue-700'
-                      : 'bg-slate-200 text-slate-600'
-                  }`}>
-                    {groupWebsiteCount}
+                  <span className={`text-xs px-2 py-0.5 rounded-full ${active ? 'bg-blue-200 text-blue-700' : 'bg-slate-200 text-slate-600'}`}>
+                    {count}
                   </span>
                 </div>
 
-                {userSession && (
+                {session ? (
                   <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                     <button
-                      onClick={(e) => { e.stopPropagation(); setEditingGroup(group); setShowGroupModal(true); }}
-                      className="p-1.5 hover:bg-white rounded-lg text-slate-400 hover:text-blue-600 shadow-sm transition-all hover:scale-105"
+                      onClick={(e) => { e.stopPropagation(); setEditingGroup(group); setModal('group'); }}
+                      className="p-1.5 hover:bg-white rounded-lg text-slate-400 hover:text-blue-600 shadow-sm transition-all"
+                      title="编辑分组"
                     >
                       <Edit2 size={14} />
                     </button>
                     <button
-                      onClick={(e) => { e.stopPropagation(); handleDeleteGroup(group.id); }}
-                      className="p-1.5 hover:bg-white rounded-lg text-slate-400 hover:text-red-600 shadow-sm transition-all hover:scale-105"
+                      onClick={(e) => { e.stopPropagation(); deleteGroup(group.id); }}
+                      className="p-1.5 hover:bg-white rounded-lg text-slate-400 hover:text-red-600 shadow-sm transition-all"
+                      title="删除分组"
                     >
                       <Trash2 size={14} />
                     </button>
                   </div>
-                )}
-
-                {!userSession && activeGroupId === group.id && (
+                ) : active ? (
                   <ChevronRight size={16} className="text-blue-400" />
-                )}
+                ) : null}
               </div>
             );
           })}
         </div>
 
         <div className="p-4 border-t border-slate-100 bg-slate-50/50">
-          {userSession ? (
+          {session ? (
             <div className="space-y-2">
               <button
-                onClick={() => setShowSettingsModal(true)}
-                className="w-full flex items-center justify-center gap-2 px-4 py-3 text-sm font-medium text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 hover:border-slate-300 rounded-xl transition-all shadow-sm"
+                onClick={() => setModal('settings')}
+                className="w-full flex items-center justify-center gap-2 px-4 py-3 text-sm font-medium text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 rounded-xl transition-all shadow-sm"
               >
                 <Settings size={18} />
-                <span>设置</span>
+                设置
               </button>
               <button
                 onClick={handleLogout}
                 className="w-full flex items-center justify-center gap-2 px-4 py-3 text-sm font-medium text-red-600 bg-red-50 hover:bg-red-100 rounded-xl transition-colors"
               >
                 <LogOut size={18} />
-                <span>退出登录</span>
+                退出登录
               </button>
             </div>
           ) : (
             <button
-              onClick={() => setShowLoginModal(true)}
-              className="w-full flex items-center justify-center gap-2 px-4 py-3 text-sm font-medium text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 hover:border-slate-300 rounded-xl transition-all shadow-sm"
+              onClick={() => setModal('login')}
+              className="w-full flex items-center justify-center gap-2 px-4 py-3 text-sm font-medium text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 rounded-xl transition-all shadow-sm"
             >
               <Settings size={18} />
-              <span>管理员登录</span>
+              登录
             </button>
           )}
         </div>
       </aside>
 
-      {/* Main Content */}
       <main className="flex-1 flex flex-col h-screen overflow-hidden relative bg-slate-50/50">
-        {/* Background Decorations */}
         <div className="absolute top-0 inset-x-0 h-96 bg-gradient-to-b from-blue-50/50 to-transparent pointer-events-none z-0" />
-        <div className="absolute top-20 right-20 w-72 h-72 bg-blue-200/20 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute top-40 left-20 w-96 h-96 bg-indigo-200/20 rounded-full blur-3xl pointer-events-none" />
-        
-        {/* Header */}
+
         <header className="px-6 lg:px-8 py-4 lg:py-6 flex items-center justify-between sticky top-0 z-20 glass mb-6">
           <div className="flex items-center gap-4 lg:hidden">
-            <button 
-              onClick={() => setSidebarOpen(true)}
-              className="p-2 -ml-2 text-slate-600 hover:bg-slate-100 rounded-lg"
-            >
+            <button onClick={() => setSidebarOpen(true)} className="p-2 -ml-2 text-slate-600 hover:bg-slate-100 rounded-lg">
               <Menu size={24} />
             </button>
-            <span className="font-bold text-slate-900">NavDev</span>
+            <span className="font-bold text-slate-900">SoloLink</span>
           </div>
 
           <div className="hidden lg:block relative w-full max-w-md group">
@@ -402,108 +354,68 @@ export default function Dashboard() {
               className="w-full pl-11 pr-4 py-2.5 bg-slate-100/50 border-none rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500/20 transition-all text-sm text-slate-800 placeholder:text-slate-400"
             />
           </div>
-          
-          <div className="flex items-center gap-4 ml-auto lg:ml-0">
-            {userSession && (
-              <>
-                <button
-                  onClick={() => setShowLinkCheckerModal(true)}
-                  className="flex items-center gap-2 px-4 py-2.5 bg-green-600 text-white text-sm font-medium rounded-xl hover:bg-green-700 hover:shadow-lg hover:shadow-green-500/30 transition-all active:scale-95"
-                  title="检查所有链接"
-                >
-                  <CheckCircle size={18} />
-                  <span className="hidden sm:inline">检查链接</span>
-                </button>
-                <button
-                  onClick={() => { setEditingWebsite(null); setShowWebsiteModal(true); }}
-                  className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-xl hover:bg-blue-700 hover:shadow-lg hover:shadow-blue-500/30 transition-all active:scale-95"
-                >
-                  <Plus size={18} />
-                  <span className="hidden sm:inline">添加网站</span>
-                </button>
-              </>
-            )}
-          </div>
+
+          {session && (
+            <div className="flex items-center gap-3 ml-auto lg:ml-0">
+              <button
+                onClick={() => setModal('checker')}
+                className="flex items-center gap-2 px-4 py-2.5 bg-green-600 text-white text-sm font-medium rounded-xl hover:bg-green-700 transition-all active:scale-95"
+                title="检查所有链接"
+              >
+                <CheckCircle size={18} />
+                <span className="hidden sm:inline">检查链接</span>
+              </button>
+              <button
+                onClick={() => { setEditingWebsite(null); setModal('website'); }}
+                className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-xl hover:bg-blue-700 transition-all active:scale-95"
+              >
+                <Plus size={18} />
+                <span className="hidden sm:inline">添加网站</span>
+              </button>
+            </div>
+          )}
         </header>
 
-        {/* Content Area */}
         <div className="flex-1 overflow-y-auto px-6 lg:px-8 pb-8 z-10 custom-scrollbar">
           <div className="max-w-[1920px] mx-auto">
-            {/* Stats Panel - Always visible */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
-              <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl p-4 text-white shadow-lg shadow-blue-500/30">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-blue-100 text-xs font-medium">总链接数</p>
-                    <p className="text-2xl font-bold mt-1">{stats.totalLinks}</p>
-                  </div>
-                  <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
-                    <Link2 size={20} />
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-2xl p-4 text-white shadow-lg shadow-emerald-500/30">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-emerald-100 text-xs font-medium">总点击量</p>
-                    <p className="text-2xl font-bold mt-1">{stats.totalClicks}</p>
-                  </div>
-                  <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
-                    <MousePointerClick size={20} />
+              {STAT_CARDS.map(({ key, label, icon, color }) => (
+                <div key={key} className={`bg-gradient-to-br ${color} rounded-2xl p-4 text-white shadow-lg`}>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-white/80 text-xs font-medium">{label}</p>
+                      <p className="text-2xl font-bold mt-1">{stats[key]}</p>
+                    </div>
+                    <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">{icon}</div>
                   </div>
                 </div>
-              </div>
-
-              <div className="bg-gradient-to-br from-violet-500 to-violet-600 rounded-2xl p-4 text-white shadow-lg shadow-violet-500/30">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-violet-100 text-xs font-medium">本周点击</p>
-                    <p className="text-2xl font-bold mt-1">{stats.weeklyClicks}</p>
-                  </div>
-                  <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
-                    <Calendar size={20} />
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-gradient-to-br from-amber-500 to-orange-500 rounded-2xl p-4 text-white shadow-lg shadow-amber-500/30">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-amber-100 text-xs font-medium">本周新增</p>
-                    <p className="text-2xl font-bold mt-1">{stats.newLinksThisWeek}</p>
-                  </div>
-                  <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
-                    <Plus size={20} />
-                  </div>
-                </div>
-              </div>
+              ))}
             </div>
 
-            {filteredWebsites.length === 0 ? (
+            {visibleWebsites.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-[50vh] text-center">
-                <div className="w-32 h-32 bg-slate-100 rounded-full flex items-center justify-center mb-6 animate-pulse">
+                <div className="w-32 h-32 bg-slate-100 rounded-full flex items-center justify-center mb-6">
                   <FolderOpen size={64} className="text-slate-300" />
                 </div>
                 <h3 className="text-xl font-bold text-slate-900 mb-2">暂无网站</h3>
                 <p className="text-slate-500 max-w-sm mx-auto leading-relaxed mb-6">
-                  {searchQuery ? `未找到 "${searchQuery}" 相关的网站` : "该分组暂无网站，点击下方按钮添加！"}
+                  {searchQuery ? `未找到 "${searchQuery}" 相关的网站` : '该分组暂无网站，点击下方按钮添加'}
                 </p>
-                {userSession && !searchQuery && (
+                {session && !searchQuery && (
                   <div className="flex gap-4">
-                    {!activeGroupId && userSession && (
+                    {groups.length === 0 && (
                       <button
-                        onClick={() => setShowGroupModal(true)}
-                        className="flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white font-medium rounded-xl hover:bg-indigo-700 transition-all shadow-md hover:shadow-indigo-500/30"
+                        onClick={() => { setEditingGroup(null); setModal('group'); }}
+                        className="flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white font-medium rounded-xl hover:bg-indigo-700 transition-all shadow-md"
                       >
                         <Plus size={20} />
                         创建第一个分组
                       </button>
                     )}
-                    {(activeGroupId || groups.length > 0) && (
-                       <button
-                        onClick={() => { setEditingWebsite(null); setShowWebsiteModal(true); }}
-                        className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white font-medium rounded-xl hover:bg-blue-700 transition-all shadow-md hover:shadow-blue-500/30"
+                    {groups.length > 0 && (
+                      <button
+                        onClick={() => { setEditingWebsite(null); setModal('website'); }}
+                        className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white font-medium rounded-xl hover:bg-blue-700 transition-all shadow-md"
                       >
                         <Plus size={20} />
                         添加网站
@@ -514,10 +426,10 @@ export default function Dashboard() {
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6 pb-20">
-                {filteredWebsites.map(website => (
+                {visibleWebsites.map((website) => (
                   <div
                     key={website.id}
-                    onClick={() => handleWebsiteClick(website)}
+                    onClick={() => openWebsite(website)}
                     className="group bg-white rounded-2xl p-5 shadow-[0_2px_8px_-2px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_24px_-4px_rgba(0,0,0,0.1)] transition-all duration-300 border border-slate-100 hover:border-blue-100 relative cursor-pointer hover:-translate-y-1"
                   >
                     <div className="flex items-center gap-4 h-full">
@@ -537,24 +449,23 @@ export default function Dashboard() {
                       </div>
                     </div>
 
-                    {/* Description Overlay */}
-                    <div className="absolute inset-0 bg-white/95 backdrop-blur-sm flex items-center justify-center p-6 opacity-0 group-hover:opacity-100 transition-opacity duration-200 rounded-2xl z-10 text-center pointer-events-none group-hover:pointer-events-auto">
-                        <p className="text-sm text-slate-600 font-medium line-clamp-3 leading-relaxed">
-                            {website.description || website.url}
-                        </p>
+                    <div className="absolute inset-0 bg-white/95 backdrop-blur-sm flex items-center justify-center p-6 opacity-0 group-hover:opacity-100 transition-opacity duration-200 rounded-2xl z-10 text-center pointer-events-none">
+                      <p className="text-sm text-slate-600 font-medium line-clamp-3 leading-relaxed">
+                        {website.description || website.url}
+                      </p>
                     </div>
 
-                    {userSession && (
+                    {session && (
                       <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1 bg-white shadow-sm rounded-lg p-1 border border-slate-100 z-20">
                         <button
-                          onClick={(e) => { e.stopPropagation(); setEditingWebsite(website); setShowWebsiteModal(true); }}
+                          onClick={(e) => { e.stopPropagation(); setEditingWebsite(website); setModal('website'); }}
                           className="p-1.5 hover:bg-blue-50 text-slate-400 hover:text-blue-600 rounded-md transition-colors"
                           title="编辑"
                         >
                           <Edit2 size={14} />
                         </button>
                         <button
-                          onClick={(e) => { e.stopPropagation(); handleDeleteWebsite(website.id); }}
+                          onClick={(e) => { e.stopPropagation(); deleteWebsite(website.id); }}
                           className="p-1.5 hover:bg-red-50 text-slate-400 hover:text-red-600 rounded-md transition-colors"
                           title="删除"
                         >
@@ -570,51 +481,45 @@ export default function Dashboard() {
         </div>
       </main>
 
-      {/* Modals */}
-      <LoginModal 
-        isOpen={showLoginModal} 
-        onClose={() => setShowLoginModal(false)} 
-        onLogin={handleLogin} 
+      <LoginModal
+        isOpen={modal === 'login'}
+        onClose={() => setModal('')}
+        onLogin={handleLogin}
       />
-      
+
       <GroupModal
-        isOpen={showGroupModal}
-        onClose={() => setShowGroupModal(false)}
-        onSubmit={handleGroupSubmit}
+        isOpen={modal === 'group'}
+        onClose={() => { setModal(''); setEditingGroup(null); }}
+        onSubmit={saveGroup}
         initialData={editingGroup}
       />
 
-      {showWebsiteModal && (
-        <WebsiteModal
-          isOpen={showWebsiteModal}
-          onClose={() => {
-            setShowWebsiteModal(false);
-            setEditingWebsite(null);
-          }}
-          onSubmit={handleWebsiteSubmit}
-          initialData={editingWebsite}
-          groupId={activeGroupId || 0}
-          groups={groups}
-        />
-      )}
+      <WebsiteModal
+        isOpen={modal === 'website'}
+        onClose={() => { setModal(''); setEditingWebsite(null); }}
+        onSubmit={saveWebsite}
+        initialData={editingWebsite}
+        groupId={activeGroupId || groups[0]?.id || 0}
+        groups={groups}
+      />
 
       <SettingsModal
-        isOpen={showSettingsModal}
-        onClose={() => setShowSettingsModal(false)}
-        onDataChange={fetchData}
-        onOpenChangePassword={() => setShowChangePasswordModal(true)}
+        isOpen={modal === 'settings'}
+        onClose={() => setModal('')}
+        onDataChange={loadData}
+        onOpenChangePassword={() => setModal('password')}
         isAdmin={isAdmin}
       />
 
       <ChangePasswordModal
-        isOpen={showChangePasswordModal}
-        onClose={() => setShowChangePasswordModal(false)}
+        isOpen={modal === 'password'}
+        onClose={() => setModal('')}
       />
 
       <LinkCheckerModal
-        isOpen={showLinkCheckerModal}
-        onClose={() => setShowLinkCheckerModal(false)}
-        onDataChanged={fetchData}
+        isOpen={modal === 'checker'}
+        onClose={() => setModal('')}
+        onDataChanged={loadData}
       />
     </div>
   );

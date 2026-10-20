@@ -1,72 +1,57 @@
-import { getCloudflareContext } from '@opennextjs/cloudflare';
-import { createDb } from '@/db';
-import { users, websites, groups } from '@/db/schema';
+import { getDb, dbUnavailable, badRequest, serverError, getUserId } from '@/lib/api';
+import { groups, users, websites } from '@/db/schema';
+import { count, desc, eq, sql } from 'drizzle-orm';
 import { NextResponse } from 'next/server';
-import { eq, count, desc, sql } from 'drizzle-orm';
-import { getCurrentUserId } from '@/lib/get-current-user';
 
-// GET - Get all users with their stats
+/** 管理员：用户列表 + 每个用户的链接/分组/点击统计。 */
 export async function GET(req: Request) {
+  const db = getDb();
+  if (!db) return dbUnavailable();
+  if (!getUserId(req)) return NextResponse.json({ error: '未登录' }, { status: 401 });
+
   try {
-    const { env } = getCloudflareContext();
-    if (!env?.DB) {
-      return new NextResponse('Database not available', { status: 503 });
-    }
-    const db = createDb(env.DB);
+    const rows = await db.select().from(users).orderBy(desc(users.created_at));
 
-    // Get all users
-    const allUsers = await db.select().from(users).orderBy(desc(users.created_at));
+    const linkCounts = await db.select({ user_id: websites.user_id, n: count() })
+      .from(websites).groupBy(websites.user_id);
+    const groupCounts = await db.select({ user_id: groups.user_id, n: count() })
+      .from(groups).groupBy(groups.user_id);
+    const clickCounts = await db.select({
+      user_id: websites.user_id,
+      total: sql<number>`COALESCE(SUM(${websites.click_count}), 0)`,
+    }).from(websites).groupBy(websites.user_id);
 
-    // Get stats for each user
-    const usersWithStats = await Promise.all(
-      allUsers.map(async (user: typeof users.$inferSelect) => {
-        const [linksResult, groupsResult] = await Promise.all([
-          db.select({ count: count() }).from(websites).where(eq(websites.user_id, user.id)),
-          db.select({ count: count() }).from(groups).where(eq(groups.user_id, user.id)),
-        ]);
+    const toMap = (list: Array<{ user_id: number; n?: number; total?: number }>, key: 'n' | 'total') =>
+      Object.fromEntries(list.map((row) => [row.user_id, Number(row[key] ?? 0)]));
 
-        const totalClicksResult = await db.select({
-          total: sql<number>`COALESCE(SUM(${websites.click_count}), 0)`
-        }).from(websites).where(eq(websites.user_id, user.id));
+    const links = toMap(linkCounts, 'n');
+    const groupMap = toMap(groupCounts, 'n');
+    const clicks = toMap(clickCounts, 'total');
 
-        return {
-          ...user,
-          linkCount: linksResult[0]?.count || 0,
-          groupCount: groupsResult[0]?.count || 0,
-          totalClicks: totalClicksResult[0]?.total || 0,
-        };
-      })
-    );
-
-    return NextResponse.json(usersWithStats);
+    return NextResponse.json(rows.map((user) => ({
+      ...user,
+      linkCount: links[user.id] ?? 0,
+      groupCount: groupMap[user.id] ?? 0,
+      totalClicks: clicks[user.id] ?? 0,
+    })));
   } catch (error) {
-    console.error('[ADMIN_USERS_GET]', error);
-    return new NextResponse('Internal Error', { status: 500 });
+    return serverError('ADMIN_USERS_GET', error);
   }
 }
 
-// DELETE - Delete a user and all their data
+/** 管理员：删除用户（级联删除其分组与网站）。 */
 export async function DELETE(req: Request) {
+  const db = getDb();
+  if (!db) return dbUnavailable();
+  if (!getUserId(req)) return NextResponse.json({ error: '未登录' }, { status: 401 });
+
   try {
-    const { env } = getCloudflareContext();
-    if (!env?.DB) {
-      return new NextResponse('Database not available', { status: 503 });
-    }
-    const db = createDb(env.DB);
+    const { id } = await req.json() as { id?: number };
+    if (!id) return badRequest('用户 ID 不正确');
 
-    const body = await req.json() as { id: number };
-    const { id } = body;
-
-    if (!id) {
-      return new NextResponse('Invalid request', { status: 400 });
-    }
-
-    // Delete user (cascade will handle groups and websites)
     await db.delete(users).where(eq(users.id, id));
-
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('[ADMIN_USERS_DELETE]', error);
-    return new NextResponse('Internal Error', { status: 500 });
+    return serverError('ADMIN_USERS_DELETE', error);
   }
 }

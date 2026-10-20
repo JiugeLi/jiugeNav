@@ -1,84 +1,55 @@
-// API 客户端 - 自动添加用户认证信息到请求头
+// 客户端 API 客户端：自动带上身份请求头，并把错误响应转成可读信息。
+import { getUserSession } from './session';
 
-import { getUserSession } from './user-auth';
+const BASE_HEADERS = { 'Content-Type': 'application/json' };
 
-/**
- * API 客户端 - 包装 fetch，自动添加认证头
- */
+/** 底层请求；需要中断等高级用法时直接用它。 */
 export async function apiClient(url: string, options: RequestInit = {}): Promise<Response> {
   const session = getUserSession();
-  
+
   const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
-    ...(options.headers as Record<string, string> || {}),
+    ...BASE_HEADERS,
+    ...(options.headers as Record<string, string> | undefined),
   };
-  
-  // 添加用户认证信息
+
   if (session) {
     headers['X-User-Id'] = session.userId.toString();
     headers['X-Is-Admin'] = session.isAdmin.toString();
   }
-  
-  return fetch(url, {
-    ...options,
-    headers,
-  });
+
+  return fetch(url, { ...options, headers });
 }
 
-async function throwApiError(response: Response): Promise<never> {
+async function readError(response: Response): Promise<never> {
   let message = '';
   try {
-    const contentType = response.headers.get('content-type') || '';
-    if (contentType.includes('application/json')) {
+    const type = response.headers.get('content-type') || '';
+    if (type.includes('application/json')) {
       const body = await response.json() as { error?: string; message?: string };
       message = body.error || body.message || '';
     } else {
       message = await response.text();
     }
   } catch {
-    // Keep the status-only fallback when the response body cannot be read.
+    // 读不到就只报状态码
   }
-  throw new Error(message || `API Error: ${response.status}`);
+  throw new Error(`API Error ${response.status}${message ? `: ${message}` : ''}`);
 }
 
-/**
- * GET 请求
- */
-export async function apiGet<T = any>(url: string): Promise<T> {
-  const response = await apiClient(url, { method: 'GET' });
-  if (!response.ok) await throwApiError(response);
-  return response.json();
+async function request<T>(url: string, options: RequestInit): Promise<T> {
+  const response = await apiClient(url, options);
+  if (!response.ok) await readError(response);
+  return response.json() as Promise<T>;
 }
 
-/**
- * POST 请求
- */
-export async function apiPost<T = any>(url: string, data: any): Promise<T> {
-  const response = await apiClient(url, {
-    method: 'POST',
-    body: JSON.stringify(data),
-  });
-  if (!response.ok) await throwApiError(response);
-  return response.json();
-}
+export const apiGet = <T = any>(url: string, signal?: AbortSignal) =>
+  request<T>(url, { method: 'GET', signal });
 
-/**
- * PUT 请求
- */
-export async function apiPut<T = any>(url: string, data: any): Promise<T> {
-  const response = await apiClient(url, {
-    method: 'PUT',
-    body: JSON.stringify(data),
-  });
-  if (!response.ok) await throwApiError(response);
-  return response.json();
-}
+export const apiPost = <T = any>(url: string, data?: unknown) =>
+  request<T>(url, { method: 'POST', body: JSON.stringify(data ?? {}) });
 
-/**
- * DELETE 请求
- */
-export async function apiDelete<T = any>(url: string): Promise<T> {
-  const response = await apiClient(url, { method: 'DELETE' });
-  if (!response.ok) await throwApiError(response);
-  return response.json();
-}
+export const apiPut = <T = any>(url: string, data?: unknown) =>
+  request<T>(url, { method: 'PUT', body: JSON.stringify(data ?? {}) });
+
+export const apiDelete = <T = any>(url: string) =>
+  request<T>(url, { method: 'DELETE' });

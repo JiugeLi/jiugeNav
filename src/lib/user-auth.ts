@@ -1,147 +1,45 @@
-// 用户认证工具（支持 Google OAuth 和密码登录）
-
-import { getCloudflareContext } from '@opennextjs/cloudflare';
-import { createDb } from '@/db';
+// 服务端用户账号逻辑：Google 登录时创建/更新用户。
 import { users } from '@/db/schema';
-import { eq, sql } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 import type { GoogleUserInfo } from './google-auth';
+import { getDb } from './api';
+import type { UserSession } from './session';
 
-export interface UserSession {
-  userId: number;
-  email: string;
-  name: string | null;
-  avatar: string | null;
-  isAdmin: boolean;
-}
+export type { UserSession } from './session';
 
-// 检查是否在本地开发环境
-const isLocalDev = typeof process.env.WRANGLER === 'undefined';
-
-/**
- * 通过 Google 信息登录或注册用户
- * @param googleInfo Google 用户信息
- * @returns 用户会话信息
- */
+/** Google 登录：不存在则注册，存在则刷新 last_login。 */
 export async function loginOrCreateUserWithGoogle(googleInfo: GoogleUserInfo): Promise<UserSession | null> {
   try {
-    let db: any;
+    const db = getDb();
+    if (!db) return null;
 
-    if (isLocalDev && process.env.D1_DATABASE_ID && process.env.CLOUDFLARE_ACCOUNT_ID) {
-      // 本地开发模式：使用 HTTP 代理连接远程 D1
-      db = createDb(null);
-    } else {
-      // Cloudflare Workers 模式
-      const { env } = getCloudflareContext();
-      db = createDb(env.DB);
-    }
+    const now = new Date();
+    const existing = await db.select().from(users).where(eq(users.google_id, googleInfo.id)).limit(1);
 
-    if (!db) {
-      console.warn('[AUTH] DB not available');
-      return null;
-    }
-
-    // 查找用户
-    let user = await db.select().from(users).where(eq(users.google_id, googleInfo.id)).limit(1);
-
-    if (user.length === 0) {
-      // 用户不存在，创建新用户
-      const result = await db.insert(users).values({
+    let user = existing[0];
+    if (!user) {
+      const inserted = await db.insert(users).values({
         email: googleInfo.email,
         name: googleInfo.name,
         avatar: googleInfo.picture,
         google_id: googleInfo.id,
-        last_login: new Date(),
-        created_at: new Date(),
+        last_login: now,
+        created_at: now,
       }).returning();
-
-      user = result;
-      console.log('[AUTH] New user created:', googleInfo.email);
+      user = inserted[0];
     } else {
-      // 更新最后登录时间
-      await db.update(users)
-        .set({ last_login: new Date() })
-        .where(eq(users.id, user[0].id));
+      await db.update(users).set({ last_login: now }).where(eq(users.id, user.id));
     }
 
     return {
-      userId: user[0].id,
-      email: user[0].email,
-      name: user[0].name,
-      avatar: user[0].avatar,
-      isAdmin: false, // Google 登录的用户不是管理员
+      userId: user.id,
+      email: user.email,
+      name: user.name,
+      avatar: user.avatar,
+      isAdmin: false,
     };
   } catch (error) {
     console.error('[AUTH] Login/Create user failed:', error);
     return null;
   }
-}
-
-/**
- * 获取用户信息
- * @param userId 用户 ID
- * @returns 用户信息
- */
-export async function getUserById(userId: number): Promise<UserSession | null> {
-  try {
-    let db: any;
-
-    if (isLocalDev && process.env.D1_DATABASE_ID && process.env.CLOUDFLARE_ACCOUNT_ID) {
-      // 本地开发模式：使用 HTTP 代理连接远程 D1
-      db = createDb(null);
-    } else {
-      // Cloudflare Workers 模式
-      const { env } = getCloudflareContext();
-      db = createDb(env.DB);
-    }
-
-    if (!db) {
-      console.warn('[AUTH] DB not available');
-      return null;
-    }
-
-    const result = await db.select().from(users).where(eq(users.id, userId)).limit(1);
-
-    if (result.length === 0) {
-      return null;
-    }
-
-    return {
-      userId: result[0].id,
-      email: result[0].email,
-      name: result[0].name,
-      avatar: result[0].avatar,
-      isAdmin: false,
-    };
-  } catch (error) {
-    console.error('[AUTH] Get user failed:', error);
-    return null;
-  }
-}
-
-// 客户端会话管理
-export const USER_SESSION_KEY = 'jiugenav_user_session';
-
-export function saveUserSession(session: UserSession): void {
-  if (typeof window === 'undefined') return;
-  localStorage.setItem(USER_SESSION_KEY, JSON.stringify(session));
-}
-
-export function getUserSession(): UserSession | null {
-  if (typeof window === 'undefined') return null;
-  const data = localStorage.getItem(USER_SESSION_KEY);
-  if (!data) return null;
-  try {
-    return JSON.parse(data) as UserSession;
-  } catch {
-    return null;
-  }
-}
-
-export function clearUserSession(): void {
-  if (typeof window === 'undefined') return;
-  localStorage.removeItem(USER_SESSION_KEY);
-}
-
-export function isUserLoggedIn(): boolean {
-  return getUserSession() !== null;
 }

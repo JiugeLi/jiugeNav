@@ -1,65 +1,38 @@
-import { getCloudflareContext } from '@opennextjs/cloudflare';
-import { createDb } from '@/db';
-import { websites, users, groups } from '@/db/schema';
-import { NextResponse } from 'next/server';
+import { getDb, dbUnavailable, serverError, unauthorized, getUserId } from '@/lib/api';
+import { groups, users, websites } from '@/db/schema';
 import { count, sql } from 'drizzle-orm';
-import { getCurrentUserId } from '@/lib/get-current-user';
+import { NextResponse } from 'next/server';
 
+/** 管理员总览统计。 */
 export async function GET(req: Request) {
+  const db = getDb();
+  if (!db) return dbUnavailable();
+  if (!getUserId(req)) return unauthorized();
+
   try {
-    const { env } = getCloudflareContext();
-    if (!env?.DB) {
-      return new NextResponse('Database not available', { status: 503 });
-    }
-    const db = createDb(env.DB);
+    const sevenDaysAgo = Math.floor(Date.now() / 1000) - 7 * 24 * 3600;
+    const newSince = (column: typeof websites.created_at | typeof users.created_at) =>
+      sql<number>`COALESCE(SUM(CASE WHEN ${column} >= ${sevenDaysAgo} THEN 1 ELSE 0 END), 0)`;
 
-    // Check if admin
-    const session = await getCurrentUserId(req);
-    // TODO: Add proper admin check
-
-    // Get total users
-    const totalUsersResult = await db.select({ count: count() }).from(users);
-    const totalUsers = totalUsersResult[0]?.count || 0;
-
-    // Get total links
-    const totalLinksResult = await db.select({ count: count() }).from(websites);
-    const totalLinks = totalLinksResult[0]?.count || 0;
-
-    // Get total groups
-    const totalGroupsResult = await db.select({ count: count() }).from(groups);
-    const totalGroups = totalGroupsResult[0]?.count || 0;
-
-    // Get total clicks
-    const totalClicksResult = await db.select({ total: sql<number>`COALESCE(SUM(${websites.click_count}), 0)` })
-      .from(websites);
-    const totalClicks = totalClicksResult[0]?.total || 0;
-
-    // Get new users this week
-    // created_at 存的是 Unix 秒（integer），不能用 toISOString() 比较
-    const sevenDaysAgo = new Date();
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-    const sevenDaysAgoTimestamp = Math.floor(sevenDaysAgo.getTime() / 1000);
-    const newUsersResult = await db.select({ count: count() })
-      .from(users)
-      .where(sql`${users.created_at} >= ${sevenDaysAgoTimestamp}`);
-    const newUsersThisWeek = newUsersResult[0]?.count || 0;
-
-    // Get new links this week
-    const newLinksResult = await db.select({ count: count() })
-      .from(websites)
-      .where(sql`${websites.created_at} >= ${sevenDaysAgoTimestamp}`);
-    const newLinksThisWeek = newLinksResult[0]?.count || 0;
+    const [userStats, linkStats, groupStats] = await Promise.all([
+      db.select({ total: count(), newThisWeek: newSince(users.created_at) }).from(users),
+      db.select({
+        total: count(),
+        clicks: sql<number>`COALESCE(SUM(${websites.click_count}), 0)`,
+        newThisWeek: newSince(websites.created_at),
+      }).from(websites),
+      db.select({ total: count() }).from(groups),
+    ]);
 
     return NextResponse.json({
-      totalUsers,
-      totalLinks,
-      totalGroups,
-      totalClicks,
-      newUsersThisWeek,
-      newLinksThisWeek,
+      totalUsers: userStats[0]?.total ?? 0,
+      totalLinks: linkStats[0]?.total ?? 0,
+      totalGroups: groupStats[0]?.total ?? 0,
+      totalClicks: Number(linkStats[0]?.clicks ?? 0),
+      newUsersThisWeek: Number(userStats[0]?.newThisWeek ?? 0),
+      newLinksThisWeek: Number(linkStats[0]?.newThisWeek ?? 0),
     });
   } catch (error) {
-    console.error('[ADMIN_STATS]', error);
-    return new NextResponse('Internal Error', { status: 500 });
+    return serverError('ADMIN_STATS_GET', error);
   }
 }

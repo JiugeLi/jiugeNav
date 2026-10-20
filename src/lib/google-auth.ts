@@ -49,21 +49,3 @@ export async function verifyGoogleToken(idToken: string): Promise<GoogleUserInfo
     return null;
   }
 }
-
-/**
- * 生成 Google OAuth URL
- * @param clientId Google Client ID
- * @param redirectUri 回调 URL
- * @returns OAuth URL
- */
-export function getGoogleOAuthUrl(clientId: string, redirectUri: string): string {
-  const params = new URLSearchParams({
-    client_id: clientId,
-    redirect_uri: redirectUri,
-    response_type: 'token id_token',
-    scope: 'openid email profile',
-    nonce: crypto.randomUUID(),
-  });
-  
-  return `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`;
-}
