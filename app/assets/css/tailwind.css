@@ -66,6 +66,73 @@
     box-shadow: 0 1px 2px rgba(16, 24, 40, 0.05), 0 16px 32px -22px rgba(53, 96, 224, 0.28);
   }
 
+  /* 首页链接卡片：比 ac-card 更轻的边框与阴影 */
+  .ac-link-card {
+    border-radius: 14px;
+    background: #ffffff;
+    border: 1px solid #edf1f8;
+    box-shadow: 0 1px 2px rgba(16, 24, 40, 0.03), 0 8px 24px -20px rgba(16, 24, 40, 0.16);
+    transition: border-color 0.16s ease, box-shadow 0.16s ease;
+  }
+
+  .ac-link-card:hover {
+    border-color: #c3d6ff;
+    box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04), 0 12px 28px -20px rgba(53, 96, 224, 0.3);
+  }
+
+  /* 侧边栏 / 菜单的导航项 */
+  .ac-nav-item {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+    width: 100%;
+    border-radius: 12px;
+    padding: 0.7rem 0.9rem;
+    font-size: 0.95rem;
+    font-weight: 500;
+    color: var(--ac-ink);
+    transition: background-color 0.16s ease, color 0.16s ease;
+  }
+
+  .ac-nav-item:hover {
+    background-color: #f1f4fa;
+  }
+
+  .ac-nav-item.is-active {
+    background-color: #eaf0fd;
+    color: var(--ac-accent-deep);
+    font-weight: 600;
+  }
+
+  .ac-menu {
+    position: absolute;
+    z-index: 50;
+    min-width: 12rem;
+    border-radius: 14px;
+    padding: 0.4rem;
+    background: #ffffff;
+    border: 1px solid var(--ac-line);
+    box-shadow: 0 20px 44px -24px rgba(16, 24, 40, 0.28);
+  }
+
+  .ac-menu-item {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    width: 100%;
+    border-radius: 9px;
+    padding: 0.55rem 0.7rem;
+    font-size: 0.875rem;
+    color: var(--ac-ink);
+    text-align: left;
+    transition: background-color 0.16s ease, color 0.16s ease;
+  }
+
+  .ac-menu-item:hover {
+    background-color: #f1f4fa;
+    color: var(--ac-accent-deep);
+  }
+
   .ac-glass {
     background: rgba(255, 255, 255, 0.84);
     backdrop-filter: blur(14px) saturate(140%);

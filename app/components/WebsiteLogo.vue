@@ -4,32 +4,37 @@ import { Globe } from 'lucide-vue-next';
 import type { Website } from '~/utils/types';
 
 const props = defineProps<{ website: Website }>();
-const failed = ref(false);
+// 0 = 首选图标，1 = Google favicon 兜底，2 = 全部失败显示地球
+const attempt = ref(0);
 
-const src = computed(() => {
+const candidates = computed(() => {
   try {
-    const origin = new URL(props.website.url).origin;
+    const { origin, hostname } = new URL(props.website.url);
     const saved = props.website.logo_url?.trim();
     const isGoogleFavicon = !!saved
       && (saved.includes('google.com/s2/favicons') || saved.includes('gstatic.com/faviconV2'));
 
-    // 没有 logo、指向 Google 图标服务、或不是 https 时，统一退化到站点自身 favicon
-    return !saved || isGoogleFavicon || !saved.startsWith('https://') ? `${origin}/favicon.ico` : saved;
+    // 没有 logo、指向 Google 图标服务、或不是 https 时，先用站点自身 favicon
+    const primary = !saved || isGoogleFavicon || !saved.startsWith('https://') ? `${origin}/favicon.ico` : saved;
+    // 很多站点根目录没有 favicon.ico，失败后再走 Google 图标服务
+    return [primary, `https://www.google.com/s2/favicons?domain=${hostname}&sz=64`];
   } catch {
-    return null;
+    return [];
   }
 });
 
-watch(src, () => { failed.value = false; });
+const src = computed(() => candidates.value[attempt.value] ?? null);
+
+watch(candidates, () => { attempt.value = 0; });
 </script>
 
 <template>
   <img
-    v-if="src && !failed"
+    v-if="src"
     :src="src"
     :alt="website.name"
-    class="w-10 h-10 object-contain"
-    @error="failed = true"
+    class="w-7 h-7 object-contain"
+    @error="attempt++"
   >
-  <Globe v-else class="text-sakura-400" :size="24" />
+  <Globe v-else class="text-sakura-400" :size="22" />
 </template>

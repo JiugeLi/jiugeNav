@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 import {
-  CheckCircle, Edit2, FolderOpen, Link2, LogIn, LogOut, Menu, Plus, Search, Settings, Trash2, X,
+  CheckCircle, ChevronDown, Edit2, FolderOpen, FolderPlus, Home, Link2, LogIn, LogOut, Menu,
+  MoreHorizontal, Plus, Search, Settings, Shield, Trash2, X,
 } from 'lucide-vue-next';
 import LoginModal from '~/components/LoginModal.vue';
 import GroupModal from '~/components/GroupModal.vue';
@@ -9,27 +10,67 @@ import WebsiteModal from '~/components/WebsiteModal.vue';
 import SettingsModal from '~/components/SettingsModal.vue';
 import ChangePasswordModal from '~/components/ChangePasswordModal.vue';
 import LinkCheckerModal from '~/components/LinkCheckerModal.vue';
-import StatCards from '~/components/StatCards.vue';
-import WebsiteLogo from '~/components/WebsiteLogo.vue';
+import LinkCard from '~/components/LinkCard.vue';
 import type { Group, Website } from '~/utils/types';
 
 const store = useStore();
 const {
-  session, groups, stats, activeGroupId, searchQuery, loading,
-  visibleWebsites, groupCount, init, loadData, signOut,
+  session, groups, websites, activeGroupId, searchQuery, loading,
+  visibleWebsites, frequentWebsites, groupCount, init, loadData, signOut,
   saveGroup, deleteGroup, saveWebsite, deleteWebsite, openWebsite,
 } = store;
 
+const router = useRouter();
+
 const sidebarOpen = ref(false);
+const menu = ref<'' | 'more' | 'user' | 'tabs'>('');
 const modal = ref<'' | 'login' | 'group' | 'website' | 'settings' | 'password' | 'checker'>('');
 
 const editingGroup = ref<Group | null>(null);
 const editingWebsite = ref<Website | null>(null);
+const searchInput = ref<HTMLInputElement | null>(null);
+
+// 「All Links」标签栏直接展示的分组数，其余收进 … 菜单
+const VISIBLE_TABS = 6;
+
+function onKeydown(event: KeyboardEvent) {
+  if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
+    event.preventDefault();
+    searchInput.value?.focus();
+  }
+  if (event.key === 'Escape') menu.value = '';
+}
 
 onMounted(async () => {
+  window.addEventListener('keydown', onKeydown);
   await init();
   if (!session.value) modal.value = 'login';
 });
+
+onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown));
+
+const greeting = computed(() => {
+  const hour = new Date().getHours();
+  if (hour < 12) return 'Good morning!';
+  if (hour < 18) return 'Good afternoon!';
+  return 'Good evening!';
+});
+
+const userInitial = computed(() => (session.value?.name || session.value?.email || '?').slice(0, 1).toUpperCase());
+const showFrequent = computed(() => !activeGroupId.value && !searchQuery.value.trim() && frequentWebsites.value.length > 0);
+const tabGroups = computed(() => groups.value.slice(0, VISIBLE_TABS));
+const overflowGroups = computed(() => groups.value.slice(VISIBLE_TABS));
+const overflowActive = computed(() => overflowGroups.value.some((g) => g.id === activeGroupId.value));
+
+const sectionTitle = computed(() => {
+  if (searchQuery.value.trim()) return 'Search Results';
+  return 'All Links';
+});
+
+function runMenu(action: () => void) {
+  menu.value = '';
+  action();
+}
 
 function handleSignOut() {
   signOut();
@@ -82,253 +123,278 @@ async function removeWebsite(id: number) {
   }
 }
 
-function selectGroup(id: number) {
+function selectGroup(id: number | null) {
   activeGroupId.value = id;
+  searchQuery.value = '';
   sidebarOpen.value = false;
+  menu.value = '';
 }
-
-function hostOf(url: string): string {
-  try {
-    return new URL(url).host.replace(/^www\./, '');
-  } catch {
-    return url;
-  }
-}
-
-const activeGroupName = computed(() => groups.value.find((g) => g.id === activeGroupId.value)?.name ?? '全部网站');
 </script>
 
 <template>
-  <div class="h-screen flex overflow-hidden relative text-ink font-rounded">
-    <div v-if="loading" class="flex items-center justify-center h-screen w-full relative z-10">
-      <div class="flex flex-col items-center gap-4">
-        <div class="w-12 h-12 rounded-full border-4 border-sakura-100 border-t-sakura-400 animate-spin" />
-        <p class="text-sm font-bold text-ink-soft">加载中 ✧</p>
-      </div>
+  <div class="h-screen flex overflow-hidden relative text-ink">
+    <div v-if="loading" class="flex items-center justify-center h-screen w-full">
+      <div class="w-10 h-10 rounded-full border-4 border-sakura-100 border-t-sakura-500 animate-spin" />
     </div>
 
     <template v-else>
-      <div v-if="sidebarOpen" class="fixed inset-0 bg-[#0b1220]/40 backdrop-blur-sm z-30 lg:hidden" @click="sidebarOpen = false" />
+      <div v-if="sidebarOpen" class="fixed inset-0 bg-[#0b1220]/30 z-30 lg:hidden" @click="sidebarOpen = false" />
 
       <!-- 侧边栏 -->
       <aside
-        class="fixed lg:static inset-y-0 left-0 z-40 w-72 shrink-0 ac-glass border-r-2 border-[#e4eaf6] transform transition-transform duration-300 ease-out lg:transform-none flex flex-col h-full overflow-hidden"
-        :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'"
-        style="box-shadow: 10px 0 40px -32px rgba(16, 24, 40, 0.12)"
+        class="fixed lg:static inset-y-0 left-0 z-40 w-64 shrink-0 bg-surface-2 border-r border-[#e9eef7] flex-col h-full"
+        :class="sidebarOpen ? 'flex' : 'hidden lg:flex'"
       >
-        <div class="px-5 pt-5 pb-4 flex items-center justify-between">
+        <div class="px-6 pt-7 pb-8 flex items-center justify-between">
           <div class="flex items-center gap-3">
-            <div class="relative w-11 h-11 rounded-2xl flex items-center justify-center text-white text-lg font-black shrink-0"
-                 style="background-image: linear-gradient(140deg, #4F7CFF, #5F6FFF 55%, #7C5CF5); box-shadow: 0 6px 14px -8px rgba(53, 96, 224, 0.7)">
-              <Link2 :size="20" />
+            <div class="w-11 h-11 rounded-xl flex items-center justify-center text-white shrink-0"
+                 style="background-image: linear-gradient(140deg, #6d97ff, #4f7cff 55%, #5f6fff)">
+              <Link2 :size="22" />
             </div>
             <div class="leading-tight">
-              <h1 class="text-xl font-extrabold ac-gradient-text">SoloLink</h1>
-              <p class="text-[10px] font-bold tracking-[0.2em] text-ink-mute">PERSONAL LINK DECK</p>
+              <h1 class="text-xl font-bold text-ink">SoloLink</h1>
+              <p class="text-xs text-ink-soft">Personal Link Deck</p>
             </div>
           </div>
-          <button class="lg:hidden p-2 rounded-full text-ink-soft hover:bg-[#eff3fb]" @click="sidebarOpen = false">
+          <button class="lg:hidden p-2 rounded-lg text-ink-soft hover:bg-surface-3" @click="sidebarOpen = false">
             <X :size="18" />
           </button>
         </div>
 
-        <div class="px-5">
-          <div class="ac-divider" />
-        </div>
-
-        <div class="flex items-center justify-between px-5 pt-4 pb-2">
-          <h2 class="ac-section-title">✦ 分组</h2>
-          <button
-            v-if="session"
-            class="w-7 h-7 rounded-full flex items-center justify-center text-sakura-600 bg-sakura-100 border border-sakura-200 hover:bg-sakura-200 transition-all"
-            title="新建分组"
-            @click="openGroupModal(null)"
-          >
-            <Plus :size="15" />
+        <nav class="flex-1 overflow-y-auto px-3 space-y-1 custom-scrollbar">
+          <button class="ac-nav-item" :class="{ 'is-active': !activeGroupId }" @click="selectGroup(null)">
+            <Home :size="20" class="text-sakura-500 shrink-0" />
+            <span class="flex-1 text-left truncate">Home</span>
+            <span class="text-xs text-ink-soft tabular-nums">{{ websites.length }}</span>
           </button>
-        </div>
 
-        <div class="flex-1 overflow-y-auto px-3 pb-3 space-y-1.5 custom-scrollbar">
           <div
             v-for="group in groups"
             :key="group.id"
-            class="group relative flex items-center justify-between gap-2 px-3.5 py-2.5 rounded-2xl cursor-pointer transition-all duration-200 border-2"
-            :class="activeGroupId === group.id
-              ? 'text-white border-transparent'
-              : 'text-ink-soft border-transparent hover:bg-[#eff3fb] hover:text-ink hover:border-sakura-100'"
-            :style="activeGroupId === group.id
-              ? { backgroundImage: 'linear-gradient(135deg, #4F7CFF, #5F6FFF 48%, #7C5CF5)', boxShadow: '0 8px 18px -12px rgba(53, 96, 224, 0.7)' }
-              : undefined"
+            class="group ac-nav-item cursor-pointer"
+            :class="{ 'is-active': activeGroupId === group.id }"
             @click="selectGroup(group.id)"
           >
-            <div class="flex items-center gap-2.5 truncate flex-1 min-w-0">
-              <span class="text-lg ">{{ group.icon || '📁' }}</span>
-              <span class="font-bold text-sm truncate">{{ group.name }}</span>
+            <span class="w-5 text-center text-lg leading-none shrink-0">{{ group.icon || '📁' }}</span>
+            <span class="flex-1 truncate">{{ group.name }}</span>
+            <div v-if="session" class="hidden group-hover:flex items-center gap-0.5 shrink-0">
+              <button class="p-1 rounded-md text-ink-mute hover:text-sakura-600 hover:bg-white" title="编辑分组" @click.stop="openGroupModal(group)">
+                <Edit2 :size="13" />
+              </button>
+              <button class="p-1 rounded-md text-ink-mute hover:text-[#d92d20] hover:bg-white" title="删除分组" @click.stop="removeGroup(group.id)">
+                <Trash2 :size="13" />
+              </button>
             </div>
-
-            <div class="flex items-center gap-1 shrink-0">
-              <span
-                class="text-[11px] font-extrabold px-2 py-0.5 rounded-full"
-                :class="activeGroupId === group.id ? 'bg-white/25 text-white' : 'bg-sakura-50 text-sakura-600 border border-sakura-100'"
-              >
-                {{ groupCount(group.id) }}
-              </span>
-
-              <div v-if="session" class="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                <button
-                  class="p-1 rounded-full hover:bg-[#eff3fb] transition-colors"
-                  :class="activeGroupId === group.id ? 'text-white' : 'text-ink-soft hover:text-sakura-600'"
-                  title="编辑分组"
-                  @click.stop="openGroupModal(group)"
-                >
-                  <Edit2 :size="13" />
-                </button>
-                <button
-                  class="p-1 rounded-full hover:bg-[#eff3fb] transition-colors"
-                  :class="activeGroupId === group.id ? 'text-white' : 'text-ink-soft hover:text-red-500'"
-                  title="删除分组"
-                  @click.stop="removeGroup(group.id)"
-                >
-                  <Trash2 :size="13" />
-                </button>
-              </div>
-            </div>
+            <span class="text-xs text-ink-soft tabular-nums shrink-0" :class="session ? 'group-hover:hidden' : ''">{{ groupCount(group.id) }}</span>
           </div>
 
-          <p v-if="groups.length === 0" class="px-3 py-6 text-center text-xs font-bold text-ink-mute">
-            还没有分组<br>
-            <span class="text-sakura-400">点上面的 ＋ 创建 ✧</span>
-          </p>
-        </div>
+          <button v-if="session" class="ac-nav-item text-ink-mute" @click="openGroupModal(null)">
+            <FolderPlus :size="20" class="shrink-0" />
+            <span class="flex-1 text-left">New group</span>
+          </button>
+        </nav>
 
-        <div class="p-3 border-t-2 border-[#e4eaf6] space-y-2">
+        <div class="mx-6 ac-divider" />
+        <div class="p-3 space-y-1">
           <template v-if="session">
-            <button class="ac-btn ac-btn-ghost w-full py-2.5 text-sm" @click="modal = 'settings'">
-              <Settings :size="16" />
-              设置
+            <button class="ac-nav-item text-ink-soft" @click="modal = 'settings'">
+              <Settings :size="20" class="shrink-0" />
+              <span>Settings</span>
             </button>
-            <button class="ac-btn ac-btn-ghost w-full py-2.5 text-sm hover:!text-[#d92d20] hover:!border-[#fecdc9]" @click="handleSignOut">
-              <LogOut :size="16" />
-              退出登录
+            <button class="ac-nav-item text-ink-soft" @click="modal = 'checker'">
+              <CheckCircle :size="20" class="shrink-0" />
+              <span>Check links</span>
             </button>
           </template>
-          <button v-else class="ac-btn ac-btn-primary w-full py-2.5 text-sm" @click="modal = 'login'">
-            <LogIn :size="16" />
-            登录
+          <button v-else class="ac-nav-item text-sakura-600" @click="modal = 'login'">
+            <LogIn :size="20" class="shrink-0" />
+            <span>Sign in</span>
           </button>
         </div>
       </aside>
 
       <!-- 主区域 -->
-      <main class="flex-1 flex flex-col h-full overflow-hidden relative z-10">
-        <header class="px-4 lg:px-8 py-3 lg:py-4 flex items-center gap-3 sticky top-0 z-20 ac-glass border-b-2 border-[#e4eaf6]">
-          <button class="lg:hidden p-2 rounded-2xl bg-surface-2 border-2 border-sakura-100 text-sakura-600 shrink-0" @click="sidebarOpen = true">
-            <Menu :size="20" />
-          </button>
-
-          <div class="relative w-full max-w-md group">
-            <Search class="absolute left-4 top-1/2 -translate-y-1/2 text-ink-mute group-focus-within:text-sakura-500 transition-colors" :size="18" />
-            <input
-              v-model="searchQuery"
-              type="text"
-              placeholder="搜索网站、描述…"
-              class="w-full pl-11 pr-4 py-2.5 rounded-full bg-surface-2 border-2 border-sakura-100 text-sm text-ink placeholder:text-ink-mute focus:outline-none focus:border-sakura-400 transition-all"
-              style="box-shadow: 0 1px 2px rgba(16, 24, 40, 0.05)"
-            >
+      <main class="flex-1 h-full overflow-y-auto custom-scrollbar relative">
+        <!-- Hero -->
+        <section class="relative">
+          <div class="absolute inset-0 overflow-hidden pointer-events-none">
+            <img src="/hero-lake.svg" alt="" class="absolute inset-y-0 right-0 h-full w-full lg:w-[78%] object-cover object-right">
+            <div class="absolute inset-0" style="background-image: linear-gradient(90deg, #f5f7fc 22%, rgba(245, 247, 252, 0.6) 48%, rgba(245, 247, 252, 0) 72%)" />
+            <div class="absolute inset-x-0 bottom-0 h-28" style="background-image: linear-gradient(180deg, rgba(245, 247, 252, 0), #f5f7fc)" />
           </div>
 
-          <div v-if="session" class="flex items-center gap-2 ml-auto shrink-0">
-            <button
-              class="ac-btn ac-btn-mint px-3 sm:px-4 py-2.5 text-sm"
-              title="检查所有链接"
-              @click="modal = 'checker'"
-            >
-              <CheckCircle :size="17" />
-              <span class="hidden sm:inline">检查链接</span>
+          <!-- 顶部操作 -->
+          <div class="relative z-20 flex items-center gap-3 px-5 lg:px-14 pt-6">
+            <button class="lg:hidden p-2.5 rounded-full bg-white/80 text-ink-soft" @click="sidebarOpen = true">
+              <Menu :size="20" />
             </button>
-            <button class="ac-btn ac-btn-primary px-3 sm:px-4 py-2.5 text-sm" @click="openWebsiteModal(null)">
-              <Plus :size="17" />
-              <span class="hidden sm:inline">添加网站</span>
-            </button>
-          </div>
-        </header>
 
-        <div class="flex-1 overflow-y-auto px-4 lg:px-8 pt-5 pb-10 custom-scrollbar">
-          <div class="max-w-[1920px] mx-auto">
-            <div class="flex items-end justify-between mb-3 px-1">
-              <h2 class="text-lg sm:text-xl font-extrabold text-ink flex items-center gap-2">
-                <span class="text-sakura-400">✦</span>
-                {{ activeGroupName }}
-              </h2>
-              <p class="text-xs font-bold text-ink-mute">
-                共 <span class="text-sakura-600">{{ visibleWebsites.length }}</span> 个收藏
-              </p>
+            <div class="ml-auto flex items-center gap-3">
+              <template v-if="session">
+                <button
+                  class="w-10 h-10 rounded-full bg-white/80 border border-white flex items-center justify-center text-ink-soft hover:text-sakura-600 transition-colors"
+                  title="Add link"
+                  @click="openWebsiteModal(null)"
+                >
+                  <Plus :size="18" />
+                </button>
+
+                <div class="relative">
+                  <button
+                    class="w-10 h-10 rounded-full bg-white/80 border border-white flex items-center justify-center text-ink-soft hover:text-sakura-600 transition-colors"
+                    @click="menu = menu === 'more' ? '' : 'more'"
+                  >
+                    <MoreHorizontal :size="18" />
+                  </button>
+                  <div v-if="menu === 'more'" class="ac-menu right-0 top-12">
+                    <button class="ac-menu-item" @click="runMenu(() => openWebsiteModal(null))"><Plus :size="16" />Add link</button>
+                    <button class="ac-menu-item" @click="runMenu(() => openGroupModal(null))"><FolderPlus :size="16" />New group</button>
+                    <button class="ac-menu-item" @click="runMenu(() => (modal = 'checker'))"><CheckCircle :size="16" />Check links</button>
+                    <button class="ac-menu-item" @click="runMenu(() => (modal = 'settings'))"><Settings :size="16" />Settings</button>
+                  </div>
+                </div>
+
+                <div class="relative">
+                  <button class="flex items-center gap-1.5" @click="menu = menu === 'user' ? '' : 'user'">
+                    <img v-if="session.avatar" :src="session.avatar" alt="" class="w-10 h-10 rounded-full object-cover border-2 border-white">
+                    <span v-else class="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold border-2 border-white"
+                          style="background-image: linear-gradient(140deg, #6d97ff, #7c5cf5)">{{ userInitial }}</span>
+                    <ChevronDown :size="16" class="text-ink-soft" />
+                  </button>
+                  <div v-if="menu === 'user'" class="ac-menu right-0 top-12">
+                    <div class="px-3 py-2 mb-1 border-b border-[#edf1f8]">
+                      <p class="text-sm font-semibold text-ink truncate">{{ session.name || 'Me' }}</p>
+                      <p class="text-xs text-ink-mute truncate">{{ session.email }}</p>
+                    </div>
+                    <button v-if="store.isAdmin.value" class="ac-menu-item" @click="runMenu(() => router.push('/admin'))"><Shield :size="16" />Admin</button>
+                    <button class="ac-menu-item hover:!text-[#d92d20]" @click="runMenu(handleSignOut)"><LogOut :size="16" />Sign out</button>
+                  </div>
+                </div>
+              </template>
+              <button v-else class="ac-btn ac-btn-primary px-4 py-2 text-sm" @click="modal = 'login'">
+                <LogIn :size="16" />Sign in
+              </button>
             </div>
+          </div>
 
-            <StatCards :stats="stats" />
+          <div class="relative z-10 px-5 lg:px-14 pt-6 lg:pt-12 pb-16">
+            <h2 class="text-3xl lg:text-[40px] font-bold text-ink tracking-tight">{{ greeting }}</h2>
+            <p class="mt-2 text-base lg:text-lg text-ink-soft">A simple place for your favorite links.</p>
+
+            <div class="relative mt-9 max-w-2xl">
+              <Search class="absolute left-6 top-1/2 -translate-y-1/2 text-ink-soft" :size="20" />
+              <input
+                ref="searchInput"
+                v-model="searchQuery"
+                type="text"
+                placeholder="Search your links..."
+                class="w-full h-14 pl-16 pr-6 sm:pr-24 rounded-full bg-white/95 border border-white text-base text-ink placeholder:text-ink-mute focus:outline-none focus:border-sakura-300 transition-colors"
+                style="box-shadow: 0 10px 30px -18px rgba(16, 24, 40, 0.25)"
+              >
+              <kbd class="hidden sm:block absolute right-4 top-1/2 -translate-y-1/2 px-2.5 py-1 rounded-lg bg-surface-3 text-xs font-medium text-ink-soft font-sans">Ctrl K</kbd>
+            </div>
+          </div>
+        </section>
+
+        <div class="relative px-5 lg:px-14 pb-16">
+          <!-- Frequently Used -->
+          <section v-if="showFrequent" class="mb-10">
+            <h2 class="text-xl font-bold text-ink mb-5">Frequently Used</h2>
+            <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5">
+              <LinkCard
+                v-for="site in frequentWebsites"
+                :key="site.id"
+                :site="site"
+                :editable="!!session"
+                @open="openWebsite(site)"
+                @edit="openWebsiteModal(site)"
+                @remove="removeWebsite(site.id)"
+              />
+            </div>
+          </section>
+
+          <!-- All Links -->
+          <section>
+            <div class="relative z-20 flex flex-wrap items-center justify-between gap-3 mb-5">
+              <h2 class="text-xl font-bold text-ink">{{ sectionTitle }}</h2>
+
+              <div v-if="!searchQuery.trim() && groups.length" class="flex items-center gap-1">
+                <button
+                  class="px-4 py-1.5 rounded-full text-sm transition-colors whitespace-nowrap"
+                  :class="!activeGroupId ? 'bg-sakura-50 text-sakura-600 font-semibold' : 'text-ink-soft hover:text-ink'"
+                  @click="selectGroup(null)"
+                >All</button>
+                <button
+                  v-for="group in tabGroups"
+                  :key="group.id"
+                  class="px-4 py-1.5 rounded-full text-sm transition-colors whitespace-nowrap"
+                  :class="activeGroupId === group.id ? 'bg-sakura-50 text-sakura-600 font-semibold' : 'text-ink-soft hover:text-ink'"
+                  @click="selectGroup(group.id)"
+                >{{ group.name }}</button>
+
+                <div v-if="overflowGroups.length" class="relative">
+                  <button
+                    class="px-3 py-1.5 rounded-full transition-colors"
+                    :class="overflowActive ? 'bg-sakura-50 text-sakura-600' : 'text-ink-soft hover:text-ink'"
+                    @click="menu = menu === 'tabs' ? '' : 'tabs'"
+                  >
+                    <MoreHorizontal :size="18" />
+                  </button>
+                  <div v-if="menu === 'tabs'" class="ac-menu right-0 top-10">
+                    <button
+                      v-for="group in overflowGroups"
+                      :key="group.id"
+                      class="ac-menu-item"
+                      :class="{ '!text-sakura-600 font-semibold': activeGroupId === group.id }"
+                      @click="selectGroup(group.id)"
+                    >
+                      <span class="w-4 text-center">{{ group.icon || '📁' }}</span>{{ group.name }}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
 
             <div v-if="visibleWebsites.length === 0" class="flex flex-col items-center justify-center py-16 text-center">
-              <div class="relative w-28 h-28 rounded-full flex items-center justify-center mb-5 bg-gradient-to-br from-sakura-50 to-lumi-50 border-2 border-dashed border-sakura-200">
-                <FolderOpen :size="48" class="text-sakura-400" />
-                <span class="absolute -top-2 -right-1 text-2xl">🌙</span>
+              <div class="w-20 h-20 rounded-2xl flex items-center justify-center mb-5 bg-sakura-50 border border-sakura-100">
+                <FolderOpen :size="36" class="text-sakura-400" />
               </div>
-              <h3 class="text-lg font-extrabold text-ink mb-1.5">
-                {{ searchQuery ? '没有找到结果呢 (｡•́︿•̀｡)' : '这里还空空的～' }}
+              <h3 class="text-lg font-bold text-ink mb-1.5">
+                {{ searchQuery ? 'No matching links' : 'Nothing here yet' }}
               </h3>
               <p class="text-sm text-ink-soft max-w-sm mx-auto leading-relaxed mb-6">
-                {{ searchQuery ? `换个关键词试试，比如去掉 "${searchQuery}"` : '添加第一个网站，建立你的个人链接库 ✧' }}
+                {{ searchQuery ? `Try a different keyword than "${searchQuery}".` : 'Add your first link to build your personal deck.' }}
               </p>
-              <div v-if="session && !searchQuery" class="flex gap-3">
-                <button v-if="groups.length === 0" class="ac-btn ac-btn-lumi px-5 py-2.5 text-sm" @click="openGroupModal(null)">
-                  <Plus :size="17" />创建第一个分组
+              <div v-if="session && !searchQuery">
+                <button v-if="groups.length === 0" class="ac-btn ac-btn-primary px-5 py-2.5 text-sm" @click="openGroupModal(null)">
+                  <FolderPlus :size="17" />Create a group
                 </button>
                 <button v-else class="ac-btn ac-btn-primary px-5 py-2.5 text-sm" @click="openWebsiteModal(null)">
-                  <Plus :size="17" />添加网站
+                  <Plus :size="17" />Add link
                 </button>
               </div>
+              <button v-else-if="!session" class="ac-btn ac-btn-primary px-5 py-2.5 text-sm" @click="modal = 'login'">
+                <LogIn :size="17" />Sign in
+              </button>
             </div>
 
-            <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3.5 sm:gap-4 pb-20">
-              <div
+            <div v-else class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5">
+              <LinkCard
                 v-for="site in visibleWebsites"
                 :key="site.id"
-                class="group ac-card ac-card-hover p-3.5 cursor-pointer overflow-hidden"
-                @click="openWebsite(site)"
-              >
-                <div class="flex items-center gap-3">
-                  <div class="w-[52px] h-[52px] shrink-0 rounded-2xl flex items-center justify-center overflow-hidden border-2 border-sakura-100 bg-gradient-to-br from-sakura-50 to-lumi-50 ">
-                    <WebsiteLogo :website="site" />
-                  </div>
-                  <div class="min-w-0 flex-1">
-                    <h3 class="font-extrabold text-sm truncate text-ink group-hover:text-sakura-600 transition-colors">{{ site.name }}</h3>
-                    <p class="text-[11px] font-semibold text-ink-mute truncate mt-0.5">{{ hostOf(site.url) }}</p>
-                    <div v-if="(site.click_count ?? 0) > 0" class="mt-1">
-                      <span class="ac-chip">🔥 {{ site.click_count }}</span>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- 悬浮说明 -->
-                <div class="absolute inset-0 flex items-center justify-center p-5 opacity-0 group-hover:opacity-100 transition-opacity duration-200 rounded-[22px] z-10 pointer-events-none"
-                     style="background-image: linear-gradient(135deg, rgba(255, 255, 255, 0.97), rgba(248, 250, 255, 0.97)); backdrop-filter: blur(2px)">
-                  <p class="text-xs font-semibold text-ink-soft line-clamp-3 leading-relaxed text-center">
-                    {{ site.description || site.url }}
-                  </p>
-                </div>
-
-                <div v-if="session" class="absolute top-2.5 right-2.5 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1 rounded-full p-1 bg-surface-3 border border-sakura-100 z-20 shadow-sm">
-                  <button class="p-1.5 rounded-full text-ink-soft hover:text-sakura-600 hover:bg-sakura-50 transition-colors" title="编辑" @click.stop="openWebsiteModal(site)">
-                    <Edit2 :size="13" />
-                  </button>
-                  <button class="p-1.5 rounded-full text-ink-soft hover:text-[#d92d20] hover:bg-[#fef3f2] transition-colors" title="删除" @click.stop="removeWebsite(site.id)">
-                    <Trash2 :size="13" />
-                  </button>
-                </div>
-              </div>
+                :site="site"
+                :editable="!!session"
+                @open="openWebsite(site)"
+                @edit="openWebsiteModal(site)"
+                @remove="removeWebsite(site.id)"
+              />
             </div>
-          </div>
+          </section>
         </div>
       </main>
+
+      <!-- 点空白处关闭下拉菜单 -->
+      <div v-if="menu" class="fixed inset-0 z-10" @click="menu = ''" />
 
       <LoginModal :open="modal === 'login'" @close="modal = ''" />
       <GroupModal :open="modal === 'group'" :initial="editingGroup" @close="modal = ''; editingGroup = null" @submit="submitGroup" />

@@ -27,7 +27,8 @@ export function useStore() {
       groups.value = groupData;
       websites.value = websiteData;
       stats.value = statsData;
-      activeGroupId.value ??= groupData[0]?.id ?? null;
+      // 已删除的分组回退到 Home（null = 全部）
+      if (activeGroupId.value && !groupData.some((g) => g.id === activeGroupId.value)) activeGroupId.value = null;
     } catch (error) {
       console.error('加载数据失败', error);
       // 会话失效：清空并回到未登录状态
@@ -78,6 +79,12 @@ export function useStore() {
       : websites.value;
   });
 
+  /** 点击最多的前 4 个，用于首页「Frequently Used」。 */
+  const frequentWebsites = computed(() => websites.value
+    .filter((site) => (site.click_count ?? 0) > 0)
+    .sort((a, b) => (b.click_count ?? 0) - (a.click_count ?? 0))
+    .slice(0, 4));
+
   const groupCount = (groupId: number) => websites.value.filter((site) => site.group_id === groupId).length;
 
   async function saveGroup(data: Partial<Group>, id?: number) {
@@ -117,7 +124,7 @@ export function useStore() {
 
   return {
     session, groups, websites, stats, activeGroupId, searchQuery, loading, isAdmin,
-    visibleWebsites, groupCount,
+    visibleWebsites, frequentWebsites, groupCount,
     init, loadData, signIn, signOut,
     saveGroup, deleteGroup, saveWebsite, deleteWebsite, openWebsite,
   };

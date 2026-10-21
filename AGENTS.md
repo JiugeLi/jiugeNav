@@ -22,6 +22,9 @@
 - **主题是浅色冷调（蓝灰底 + 靛蓝主色），不用粉色**：色阶是常规语义（`50/100/200` 浅底与描边、`400/500` 主强调、`600/700` 深色文字）。视觉集中在 `app/assets/css/tailwind.css` 的 `ac-*` 类与 `tailwind.config.ts` 色盘，模板只写语义 class。
 - **不做装饰性动效**：禁止位移 / 缩放 / 漂浮 / 闪烁动画（`translate-y`、`scale`、`rotate` 的 hover 变换都不要），只保留 hover 的颜色与边框过渡（约 0.16s）以及加载态 `animate-spin`。
 - 表面用 `bg-surface` / `bg-surface-2` / `bg-surface-3`，别在模板里堆 `bg-white` + 硬编码阴影；卡片走 `ac-card`，按钮走 `ac-btn-*`，输入框走 `ac-input`。
+- 首页布局（2026-10-21 按设计稿重做）：左侧分组栏 + 风景 Hero（`public/hero-lake.svg`）+ 问候语/搜索（Ctrl K 聚焦）+ 「Frequently Used」（点击数前 4，仅 Home 且无搜索时显示）+ 「All Links」分组标签。`activeGroupId = null` 即 Home（全部链接），不要再默认选中第一个分组。链接卡片统一走 `LinkCard.vue` / `ac-link-card`。
+- `WebsiteLogo.vue` 图标兜底链：保存的 logo 或站点 `/favicon.ico` → Google s2 favicon → 地球图标。
+- 本地造测试数据别在 Windows bash 里用 curl 传 emoji（会变成 `??`），用 Python 发 JSON；可直接带 `X-User-Id: 1` 调 API。
 - **`nuxt.config.ts` 必须显式写 `tailwindcss.cssPath: '~/assets/css/tailwind.css'`**：Nuxt 4 的 `srcDir` 是 `app/`，`@nuxtjs/tailwindcss` 默认入口找不到自定义 CSS 时会静默用空文件，构建成功但构建产物里没有任何 `ac-*` 类，线上整站退化成裸样式（排查方法：`grep -c ac-card .output/public/_nuxt/entry.*.css`，正常为 1）。
 
 ## D1 / Drizzle 约束（踩过坑，勿改回）
